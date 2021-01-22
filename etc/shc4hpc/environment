@@ -1,0 +1,4 @@
+export DELLBASE=/apps/dell/srvadmin
+export SLURMBASE=/apps/slurm/el7/latest/bin
+export SHC4HPCVERBOSE=7
+export SSHID=/usr/lib/slurm/id_slurm

@@ -9,7 +9,7 @@ test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
 DRACMAPS=$SHC4HPCBASE/etc/shc4hpc/idracmaps
 DELLBASE=${DELLBASE:-/opt/dell/srvadmin}
 
-export LD_LIBRARY_PATH=$DELL/lib64:$DELL/lib64/openmanage/private
+export LD_LIBRARY_PATH=$DELLBASE/lib64:$DELLBASE/lib64/openmanage/private
 debug "Running failconnect for dell"
 node2rac ()
 {

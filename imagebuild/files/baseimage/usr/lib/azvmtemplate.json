@@ -1,0 +1,167 @@
+{
+  "parameters": {
+    "sshkey" : {
+       "type": "string",
+       "metadata": {
+         "description" : "The sshkey for the user"
+       }
+    },
+    "custom-data" : {
+       "type": "string",
+       "metadata": {
+         "description" : "The custom data for the image"
+       }
+    },
+    "goldenimage" : {
+       "type": "string",
+       "metadata": {
+         "description" : "The image for the VM."
+       }
+    },
+    "vmname" : {
+       "type": "string",
+       "metadata": {
+         "description" : "The name for the VM."
+       }
+    },
+    "imageRG" : {
+       "type": "string",
+       "metadata": {
+         "description" : "The rg of the image"
+       }
+    }
+  },
+  "outputs": {}, 
+  "variables": {
+     "NSGName": "[concat(parameters('vmname'), 'NSG')]", 
+     "VMNicName": "[concat(parameters('vmname'), 'VMNic')]"
+  }, 
+  "contentVersion": "1.0.0.0", 
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#", 
+  "resources": [
+    {
+      "name": "[concat(parameters('vmname'), 'NSG')]", 
+      "tags": {}, 
+      "apiVersion": "2015-06-15", 
+      "location": "[resourceGroup().location]", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/networkSecurityGroups", 
+      "properties": {
+        "securityRules": [
+          {
+            "name": "default-allow-ssh", 
+            "properties": {
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "Tcp", 
+              "priority": 1000, 
+              "destinationPortRange": "22", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*"
+            }
+          }
+        ]
+      }
+    }, 
+    {
+      "name": "[concat(parameters('vmname'), 'VMNic')]", 
+      "tags": {}, 
+      "apiVersion": "2015-06-15", 
+      "location": "westeurope", 
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/',  parameters('vmname'), 'NSG')]" 
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('NSGName'))]"
+        }, 
+        "ipConfigurations": [
+          {
+            "name": "[concat('ipconfig', parameters('vmname') )]", 
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks','vpnnet-vnet'), '/subnets/default')]"
+              },
+                "privateIPAllocationMethod": "Dynamic"
+            }
+          }
+        ]
+      }
+    }, 
+    {
+      "name": "[parameters('vmname')]", 
+      "tags": {}, 
+      "apiVersion": "2017-12-01", 
+      "location": "westeurope", 
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('vmname'), 'VMNic')]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "id": "[resourceId(parameters('imageRG'),'Microsoft.Compute/images', parameters('goldenimage'))]"
+          }, 
+          "osDisk": {
+            "caching": "ReadWrite", 
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }, 
+            "name": null, 
+            "createOption": "fromImage"
+          },
+          "dataDisks": []
+        }, 
+        "osProfile": {
+          "adminUsername": "username", 
+          "computerName": "[parameters('vmname')]", 
+          "customData": "[base64(parameters('custom-data'))]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/username/.ssh/authorized_keys", 
+                  "keyData": "[parameters('sshkey')]"
+                }
+              ]
+            }, 
+            "disablePasswordAuthentication": true
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces/',variables('VMNicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {  
+      "name": "[concat(parameters('vmname'), '/ext1')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "tags": {
+	  "displayName": "scriptextensiondemo"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmname'))]"
+      ],
+      "properties": {
+	  "publisher": "Microsoft.Azure.Extensions",
+	  "type": "CustomScript",
+	  "typeHandlerVersion": "2.0",
+	  "autoUpgradeMinorVersion": true,
+	"settings": {
+	  "commandToExecute": "/usr/sbin/slurm_instance.sh"
+	}
+      }
+    }
+  ]
+}

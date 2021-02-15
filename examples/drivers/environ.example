@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+if ! [ -f environ.secret ]; then
+
+	echo Missing environ.secret file required
+	exit 1
+fi
+#complete these 3 at a minimum and fill in all details in environ.secret
+. environ.secret
+export AZ_CLIENT_ID=""
+export AZ_TENANT_ID=""
+export AZ_SUBSCRIPTION_ID=""
+
+#Most users would just want to have these set to the same value
+export AZ_APP_SECRET=$AZ_CLIENT_SECRET
+export AZ_APP_ID=$AZ_CLIENT_ID
+
+#Default names and IPs for various Azure resources
+export AZ_IMAGE_RG=rgSHC4HPC-Img
+export AZ_RESOURCE_GROUP=rgSHC4HPC-Deployment
+export AZ_IMAGE_NAME_SHORT="-v1_0"
+export AZ_IMAGE_NAME="SHC4HPC-$AZ_IMAGE_NAME_SHORT"
+export AZ_GOLDENIMAGE="$AZ_IMAGE_NAME"
+export AZ_REGION=northeurope
+export AZ_NET_RG=rgSHC4HPC-Infra
+export AZ_VNET_NAME=rgSHC4HPC-Deployment-vnet
+export AZ_SUBNET_NAME=default
+export AZ_SUBNET="172.16.1.0/24"
+export AZ_HEADNODE_IPNAME=headnode1-ip
+
+
+
+

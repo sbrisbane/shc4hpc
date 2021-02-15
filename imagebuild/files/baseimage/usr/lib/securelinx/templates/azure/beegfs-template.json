@@ -1,0 +1,55 @@
+  "contentVersion": "1.0.0.0",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "resources": [
+    {
+      "name": "[concat(parameters('vmname'), 'NSG')]",
+      "tags": {},
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [],
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "default-allow-ssh",
+            "properties": {
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "priority": 1000,
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "sourcePortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[concat(parameters('vmname'), 'VMNic')]",
+      "tags": {},
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/',  parameters('vmname'), 'NSG')]"
+      ],
+      "type": "Microsoft.Network/networkInterfaces",
+      "properties": {
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('NSGName'))]"
+        },
+        "ipConfigurations": [
+          {
+            "name": "[concat('ipconfig', parameters('vmname') )]",
+            "properties": {
+              "subnet": {
+                "id": "[concat(resourceId('PoCRG', 'Microsoft.Network/virtualNetworks', 'PoCVnet01'), '/subnets/PoCSnet01')]"
+              },
+                "privateIPAllocationMethod": "Dynamic"
+            }
+          }
+        ]
+      }
+    },
+

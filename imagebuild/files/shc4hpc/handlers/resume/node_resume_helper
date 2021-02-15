@@ -1,0 +1,25 @@
+#!/bin/bash 
+#This script handles actions for specific nodes that fail to resume after resume timeout
+#it is not meant to be called directly
+#get environment settings
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+NFSMASTER=$(get_nfsmaster $nodename)
+export NFSMASTER
+export VPN_SUBNET=$(get_config vpn_subnet)
+export LDAP_JOIN_ACCOUNT=$(get_config ldap_join_account)
+export LDAP_REALM=$(get_config ldap_realm)
+export SSH_KEY=$(get_config ssh_key)
+
+
+node=$1
+info resuming $node 
+nodetype=$(nodetype $node)
+info the node type is $nodetype
+$SHC4HPCBASE/handlers/resume/$nodetype/resume $node
+
+

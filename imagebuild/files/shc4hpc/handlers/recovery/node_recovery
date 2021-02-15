@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#This script is the entry point for handling nodes that fail to boot. 
+#It is called automatically by slurm after the resume timeout
+
+#get environment settings
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+log handling failure for nodes $1 
+
+for node in $( $SLURMBASE/bin/scontrol show hostnames "$1" )
+do
+  $SHC4HPCBASE/handlers/recovery/node_recovery_helper $node&
+  log fail $node 
+done
+

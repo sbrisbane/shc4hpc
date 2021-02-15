@@ -1,0 +1,11 @@
+#!/bin/bash
+. environ
+IMAGENAME=${AZ_IMAGE_NAME:-SHC4HPC-SUSECON-OPENSUSE-v1.2}
+
+az image delete -g ${AZ_IMAGE_RG} -n $IMAGENAME &
+az image delete -g ${AZ_IMAGE_RG} -n $IMAGENAME &
+az image delete -g ${AZ_IMAGE_RG} -n SHC4HPC-$IMAGENAME &
+az image delete -g ${AZ_IMAGE_RG} -n SHC4HPC-$IMAGENAME &
+
+wait
+

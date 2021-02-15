@@ -1,0 +1,33 @@
+#!/bin/bash
+
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/dell/functions ] && . $SHC4HPCBASE/lib/dell/functions
+
+export DRACMAPS=$SHC4HPCBASE/etc/dell/idracmaps
+DELLBASE=${DELLBASE:-/opt/dell/srvadmin}
+
+export LD_LIBRARY_PATH=$DELLBASE/lib64:$DELLBASE/lib64/openmanage/private
+
+node=$1
+racip=$(dell_node2rac $node)
+if [ $? -ne 0 ] || [ -z $racip ]; then
+  exit 1
+fi
+
+
+CREDS=$(dell_idrac_creds $node)
+
+#Try powering it down if it is not actually contactable
+#ssh -o ConnectTimeout=5 -i /usr/lib/slurm/id_slurm $node hostname  || $DELL/bin/idracadm7 $CREDS -r $racip serveraction powerdown
+info   "$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerup"
+$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerup 
+if [ $? -ne 0 ]; then 
+   warning "$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerup failed - its possible the server is already on or it failed to connect to $racip?"
+fi
+exit 0
+   
+
+

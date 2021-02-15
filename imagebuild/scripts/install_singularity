@@ -1,0 +1,14 @@
+#!/bin/bash
+#!/bin/bash
+yum -y install squashfs-tools libarchive-devel
+cd /var/tmp
+VERSION=2.5.2
+wget https://github.com/singularityware/singularity/releases/download/$VERSION/singularity-$VERSION.tar.gz
+rpmbuild -ta singularity-$VERSION.tar.gz
+sudo rpm -i ${HOME}/rpmbuild/RPMS/x86_64/singularity-runtime-${VERSION}-1.el7.x86_64.rpm
+sudo rpm -i ${HOME}/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm
+#tar xvf singularity-$VERSION.tar.gz
+#cd singularity-$VERSION
+#./configure --prefix=/usr/local
+#make
+#sudo make install

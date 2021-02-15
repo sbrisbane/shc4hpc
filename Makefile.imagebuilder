@@ -1,0 +1,61 @@
+#install to a different location?
+
+SHC4HPCSYSCONFIG ?= /etc/sysconfig/shc4hpc
+SHC4HPCBASE ?= /usr/lib/shc4hpc
+RECURSECP=rsync -a
+
+
+.DEFAULT_GOAL := all
+
+.build/sysconfig:
+	mkdir -p  $@
+
+
+
+sysconfig: .build/sysconfig
+
+.build/sysconfig/shc4hpc: sysconfig
+	echo SHC4HPCBASE=${SHC4HPCBASE} > $@
+
+shc4hpcsysconfig: .build/sysconfig/shc4hpc
+
+imagebuild/files/userdefined/secrets/generated/etc/munge.key:
+	sh -c "dd if=/dev/urandom bs=1 count=1024 > $@"
+
+munge.key: imagebuild/files/userdefined/secrets/generated/etc/munge.key
+
+imagebuild/files/userdefined/secrets/generated/usr/lib/slurm:
+	mkdir -p $@
+
+imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm:
+	ssh-keygen -t rsa  -f $@ -P ""
+
+imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm.pub: imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm
+
+thirdparty/packer:
+	echo Reqired thirdparty/packer not found
+	echo Check manual steps in "manual" directory
+	exit 1
+packer:	thirdparty/packer
+
+environ.secret: examples/drivers/environ.secret
+packer: thirdparty/packer
+
+install: all
+	cp  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
+	mkdir -p ${SHC4HPCBASE}/bin
+	install -m 0755 thirdparty/packer ${SHC4HPCBASE}/bin/packer 
+	${RECURSECP} imagebuild/ ${SHC4HPCBASE}/imagebuild/ 
+	${RECURSECP} lib/ ${SHC4HPCBASE}/lib/ 
+	${RECURSECP} lib/ ${SHC4HPCBASE}/imagebuild/files/shc4hpc/lib/ 
+	${RECURSECP} examples/ ${SHC4HPCBASE}/examples/
+
+	
+all:  sysconfig packer munge.key environ.secret shc4hpcsysconfig
+
+#retrofitslurmmaster: all
+#	cp  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
+#	${RECURSECP} lib/ ${SHC4HPCBASE}/lib/
+#	${RECURSECP} imagebuild/files/shc4hpc/ ${SHC4HPCBASE}/
+	
+

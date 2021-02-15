@@ -1,0 +1,23 @@
+#!/bin/bash
+cd /
+#force ownership to root though
+sudo tar -tzf /tmp/shc4hpcblob.tgz
+
+TMPDIR=/tmp/unpack
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+
+SYSDIR=$SHC4HPCBASE
+DSTDIR=$TMPDIR/$SYSDIR
+
+mkdir -p $DSTDIR $SYSDIR 
+
+sudo tar -xzf /tmp/shc4hpcblob.tgz -C $DSTDIR
+
+sudo chown root:root $DSTDIR -R
+sudo chmod g-w $DSTDIR -R
+sudo chown root:root $SYSDIR -R
+sudo chmod g-w $SYSDIR -R
+
+cd $DSTDIR
+
+sudo rsync -a ./ $SYSDIR/

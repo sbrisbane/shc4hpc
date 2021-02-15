@@ -1,0 +1,497 @@
+#TODO, this should work on a shared DNS server
+function getnodename(){
+   NAME=$(get_cloudconfig_string nodename)
+   if [ -z $NAME ]; then
+      NAME=$(hostname -s)
+   fi
+   echo $NAME
+}
+
+function update_hosts()
+{
+    IP="${1}"
+    name1="${2}"
+    name2="${3}"
+    name3="${4}"
+    if  ! [ -L /etc/hosts ]; then
+       echo "${IP} ${name1} ${name2} ${name3}" >> /etc/hosts
+    else
+       echo "${IP} ${name1} ${name2} ${name3}" >> /home/configs/hosts_node
+       echo "${IP} ${name1} ${name2} ${name3}" >> /home/configs/hosts_headnode
+    fi
+}
+function get_config ()
+{
+   SECURELINXFILE=/etc/shc4hpc/shc4hpc.conf
+   temp=$(grep ^"$1": "$SECURELINXFILE" | awk '{print $2}' | tail -1)
+   temp="${temp%\"}"
+   temp="${temp#\"}"
+   temp="${temp%\'}"
+   temp="${temp#\'}"
+   echo "$temp"
+}
+function get_secret_config () {
+    #TODO integrate with something
+    #Funtions being updated with $2 as some key value, not currently used
+    key=$2
+    get_config $1
+}
+function get_cloudconfig_string ()
+{
+   temp=$(grep ^"$1": /tmp/usr_data.txt | awk '{print $2}' | tail -1)
+   temp="${temp%\"}"
+   temp="${temp#\"}"
+   temp="${temp%\'}"
+   temp="${temp#\'}"
+   echo "$temp"
+}
+function get_cloudconfig_or_changeme ()
+{
+   temp=$(get_cloudconfig_string $1)
+   if ! [ -z $temp ]; then
+       echo $temp
+   else
+       echo changeme
+   fi
+}
+function getip()
+{
+    ip -4 addr show scope global dev eth0  | grep "scope global" | awk '{print $2}' | awk -F / '{print $1}' | head -1
+}
+
+#TODO, will need to sort this if we get a customer with ironic and classical physical slurm instance node, metal starts to be ambiguous
+##TODO work on abstracting the word metal
+get_oskvirtualcloudname ()
+{
+  echo openstack
+}
+get_oskmetalcloudname ()
+{
+  echo metal
+}
+function get_cloud()
+{
+   cloud=$(get_cloudconfig_string cloud)
+   res=$?
+   echo $cloud
+   return $res
+}
+function imKVM()
+{
+    mycloud=$(get_cloud)
+    if  [ -n "$mycloud" ]; then
+      if [ $mycloud == "kvm" ] ;then
+        return 0
+      else
+        return 1
+      fi
+    
+    fi
+    isKVM "$(getnodename)"
+
+}
+function imAzure()
+{
+    mycloud=$(get_cloud)
+    if [ -n "$mycloud" ]; then
+      if [ $mycloud == "azure" ] ;then
+        return 0
+      else
+        return 1
+      fi
+    fi
+    isAzure "$(getnodename)"
+}
+function imOpenStack()
+{
+    mycloud=$(get_cloud)
+    if [ -n "$mycloud" ]; then
+      if [ $mycloud == "openstack" ] ;then
+        return 0
+      else
+        return 1
+      fi
+    fi
+    isOpenStack "$(getnodename)"
+}
+function imMetal()
+{
+    mycloud=$(get_cloud)
+    if [ -n "$mycloud" ]; then
+      if [ $mycloud == "metal" ] ;then
+        return 0
+      else
+        return 1
+      fi
+    fi
+    isMetal "$(getnodename)"
+}
+function isKVM()
+{
+   nodename=$1
+   echo $nodename | grep -q ^kvm && return 0
+   return 1 
+}
+
+function isOpenStack()
+{
+   nodename=$1
+   echo $nodename | grep -q ^osk && return 0
+   echo $nodename | grep -q ^login && return 0
+   return 1
+}
+function isAzure()
+{
+   nodename=$1
+   #TODO
+   #azure node need to contain az for now, hardcoded
+   echo $nodename | grep -q ^az && return 0
+   return 1
+}
+function isMetal()
+{
+   nodename=$1
+   #TODO
+   #azure node need to contain metal for now, hardcoded
+   echo $nodename | grep -q ^metal && return 0
+   return 1
+}
+
+isDell()
+{
+    echo $1 | grep -q dublxmpn  && return 0
+    return 1
+}
+
+isAws()
+{
+    echo $1 | grep -q  aws && return 0
+    return 1
+}
+
+
+function az_login {
+    AZ_APP_ID=$(get_config az_app_id)
+    AZ_SECRET=$(get_secret_config az_secret $AZ_APP_ID)
+    AZ_TENANT_ID=$(get_config az_tenant_id)
+    AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
+    
+    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_SECRET"
+    az account set --subscription "${AZ_SUBSCRIPTION_ID}"
+}
+
+function os_login () {
+    # With the addition of Keystone we have standardized on the term **project**
+    # as the entity that owns the resources.
+    export OS_AUTH_URL=$(get_config os_auth_url)
+    export OS_PROJECT_ID=$(get_config os_project_id)
+    export OS_PROJECT_NAME=$(get_config os_project_name)
+    if [[ $2 ]]; then
+        OS_PROJECT_ID=$1
+        OS_PROJECT_NAME=$2
+    fi
+    
+    export OS_USER_DOMAIN_NAME=$(get_config os_user_domain_name)
+    if [ -z "$OS_USER_DOMAIN_NAME" ]; then unset OS_USER_DOMAIN_NAME; fi
+
+    # unset v2.0 items in case set
+    unset OS_TENANT_ID
+    unset OS_TENANT_NAME
+
+    # In addition to the owning entity (tenant), OpenStack stores the entity
+    # performing the action as the **user**.
+    export OS_USERNAME=$(get_config os_username)
+    export OSOPTS='--insecure'
+    export NOVAOPTS="$OSOPTS"
+    # With Keystone you pass the keystone password.
+    #echo "Please enter your OpenStack Password for project $OS_PROJECT_NAME as user $OS_USERNAME: "
+
+    export OS_PASSWORD=$(get_config os_password)
+
+    # If your configuration has multiple regions, we set that information here.
+    # OS_REGION_NAME is optional and only valid in certain environments.
+    export OS_REGION_NAME=$(get_config $OS_REGION_NAME)
+    # Don't leave a blank variable, unset it if it was empty
+    if [ -z "$OS_REGION_NAME" ]; then unset OS_REGION_NAME; fi
+
+    export OS_INTERFACE=public
+    export OS_IDENTITY_API_VERSION=3
+
+    #echo "AUTHURL is: $OS_AUTH_URL"
+    env
+    if openstack ${OSOPTS} token issue &> /dev/null
+    then
+	    echo "Authentication Successful"
+	    export \
+	    PS1="\u@\h:[${OS_USERNAME}@${OS_PROJECT_DOMAIN_NAME}/${OS_PROJECT_NAME} (v3)]\w> "
+    else
+	    echo "Authentication Failed"
+	    export PS1="\u@\h:\w> "
+	    unset OS_AUTH_URL
+	    unset OS_AUTH_VERSION
+	    unset OS_IDENTITY_API_VERSION
+	    unset OS_PROJECT_DOMAIN_NAME
+	    unset OS_USER_DOMAIN_NAME
+	    unset OS_REGION_NAME
+	    unset OS_PROJECT_NAME
+	    unset OS_USERNAME
+    fi
+
+}
+
+function get_cores_per_instance ()
+{
+    nodename=$1
+    CORESPERINSTANCE_OS=1
+    CORESPERINSTANCE_AZ=2
+    CORESPERINSTANCE_PHY=28
+
+    CORESPERINSTANCE_AZ_TMP=`get_config cores_per_az`
+    CORESPERINSTANCE_PHY_TMP=`get_config cores_per_phy`
+    CORESPERINSTANCE_OS_TMP=`get_config cores_per_virtual_os`
+
+    if ! [ -z $CORESPERINSTANCE_AZ_TMP ];then
+	CORESPERINSTANCE_AZ=$CORESPERINSTANCE_AZ_TMP
+    fi
+    if ! [ -z $CORESPERINSTANCE_OS_TMP ];then
+	CORESPERINSTANCE_OS=$CORESPERINSTANCE_OS_TMP
+    fi
+    if ! [ -z $CORESPERINSTANCE_PHYTMP ];then
+	CORESPERINSTANCE_PHY=$CORESPERINSTANCE_PHY_TMP
+    fi
+    if isAzure $nodename; then
+	echo $CORESPERINSTANCE_AZ
+	return 0
+    fi
+    if isOpenStack $nodename; then
+	echo $CORESPERINSTANCE_OS
+	return 0
+    fi
+    if isMetal $nodename; then
+	echo $CORESPERINSTANCE_PHY
+	return 0
+    fi
+
+    # TODO For the POC, static number of cores per each of 3 instance types
+    # # Flexibility to do whatever you want, talk to slurm and find out jobs allocated to this node, name nodes based on core count
+    #
+    # CORESPERINSTANCE=$(get_cores_per_instance $nodename)
+    #
+}
+
+update_watchdog()
+{
+    state=$2
+    thisnodename=$1
+    if [ -e /var/lib/shc4hpc/targetstates.db ] && grep -q "^$thisnodename:" /var/lib/shc4hpc/targetstates.db  ;then
+	sed -i "s/^$thisnodename:.*/$thisnodename:$state/" /var/lib/shc4hpc/targetstates.db
+    else
+       if ! [ -e /var/lib/shc4hpc ]; then
+	    mkdir /var/lib/shc4hpc
+       fi
+       echo "$thisnodename:$state" >> /var/lib/shc4hpc/targetstates.db
+    fi
+}
+
+function shutdown_watchdog() {
+    val=0
+    if [[ $2 ]] && [ "$2" == "stop" ]
+    then
+       val="-1"
+    fi
+    update_watchdog $1 $val
+}
+
+function startup_watchdog() {
+    val=1
+    if [[ $2 ]] && [ "$2" == "start" ]
+    then
+       val=2
+    fi
+    update_watchdog $1 $val
+    if [ $val -eq 1 ]; then
+      #cloud launch command is issued, so start timer
+      /usr/bin/node_startup_monitor $1 &
+    fi
+}
+function statuscode2state ()
+{
+  state=stopped
+    case $1 in
+      -1)
+         state="stopping"
+      ;;
+      0)
+         state="stopped"
+      ;;
+      1)
+         state="started"
+      ;;
+      2)
+         state="starting"
+      ;;
+   esac
+   echo $state
+}
+function getnode_status () {
+    nodename=$1
+    if grep -q "^$nodename:" /var/lib/shc4hpc/targetstates.db ; then
+        statuscode=$(grep "^$nodename:" /var/lib/shc4hpc/targetstates.db| tail -1| awk -F : '{print $2}')
+        echo $(statuscode2state $statuscode)        
+        return 0
+    else
+        echo stopped
+        return 0
+    fi
+   
+}
+
+function node_to_floating_ip ()
+{
+    if [ "$1" == metal1 ]; then
+        echo 	192.168.126.150
+    elif [ "$1" == metal2 ]; then
+        echo 	192.168.126.153
+    elif [ "$1" == metal3 ]; then
+        echo 	192.168.126.156
+    elif [ "$1" == metal4 ]; then
+        echo 	192.168.126.157
+    fi
+}
+function get_nfsmaster(){
+   #potentially different masters for clouds
+   defnfsmaster=$(get_config nfsmaster)
+   if isOpenStack $1 ; then
+      tmp=$(get_config os_nfsmaster)
+      if ! [ x == "$tmp"x ]; then
+          echo $tmp
+          return
+      fi 
+   fi
+   if isAzure $1 ; then
+      tmp=$(get_config az_nfsmaster)
+      if ! [ x == "$tmp"x ]; then
+          echo $tmp
+          return
+      fi 
+   fi
+   if isMetal $1 ; then
+      tmp=$(get_config metal_nfsmaster)
+      if ! [ x ==  "$tmp"x ]; then
+          echo $tmp
+          return
+      fi 
+   fi
+echo $defnfsmaster
+}
+
+function restart_failed_nodes()
+{
+   x=$(get_config restart_failed_nodes)
+
+   if [ x == "${x}x" ] ; then
+      return 1 
+   fi
+   if [ "$x" -eq 1 ] || [ "$x" == true ] || [ "$x" == True ] || [ "$x" == TRUE ]; then
+       return 0
+   fi
+   return 1
+}
+
+log ()
+{
+   logger -s "$@"
+}
+verbose()
+{
+   if [ -n "$SHC4HPCVERBOSE" ] && [ $SHC4HPCVERBOSE -gt 4 ]; then
+       log verbose "$@"
+   fi
+}
+debug()
+{
+   if [ -n "$SHC4HPCVERBOSE" ] && [ $SHC4HPCVERBOSE -gt 3 ]; then
+       log debug "$@"
+   fi
+}
+info()
+{
+   if [ -n "$SHC4HPCVERBOSE" ] && [ $SHC4HPCVERBOSE -gt 2 ]; then
+       log info "$@"
+   fi
+}
+warning()
+{
+   if [ -z "$SHC4HPCVERBOSE" ] || [ $SHC4HPCVERBOSE -gt 1 ]; then
+       log WARNING "$@"
+   fi
+}
+error()
+{
+   if [ -z "$SHC4HPCVERBOSE" ] || [ $SHC4HPCVERBOSE -gt 0 ]; then
+       log ERROR "$@"
+   fi
+}
+
+
+
+nodetype()
+{
+   isDell $1 && echo dell && exit 0
+   isAws  $1 && echo aws && exit 0
+   isAzure  && echo azure && exit 0
+   echo default   
+}
+
+function createuserdata () {
+nodename=$1
+mkdir -p /tmp/slurmlaunch-$USER
+export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$nodename-$RANDOM"
+
+  cat << EOF > "${LAUNCHCONFIG}"
+#cloud-config
+ssh_deletekeys: false
+disable_root: false
+no_ssh_fingerprints: true
+ssh_authorized_keys:
+ - ssh-rsa "$SSH_KEY" root@cluster
+timezone: "Europe/Dublin"
+runcmd:
+ - [ "/usr/sbin/slurm_instance.sh" ]
+nfsmaster: "${NFSMASTER}"
+slurmmaster: "$(hostname -s)"
+hostname: "${nodename}"
+nodename: "${nodename}"
+master: no
+ldap_join_account: ${LDAP_JOIN_ACCOUNT}
+ldap_realm: ${LDAP_REALM}
+EOF
+
+#fqdn: ${nodename}
+}
+
+function osbreed () {
+   if [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] ; then
+      echo el
+   elif [ -f /etc/SuSE-release  ]; then
+      echo sles
+   fi
+   
+}
+function osversion (){
+   breed=$(osbreed)
+   if [ $breed = el ] && [ -f /etc/centos-release ]; then
+      grep -qi "release 6" /etc/centos-release && echo 6 && return 0
+      grep -qi "release 7" /etc/centos-release && echo 7 && return 0
+      grep -qi "release 8" /etc/centos-release && echo 8 && return 0
+   elif [ $breed = el ] && [ -f /etc/redhat-release ]; then
+      grep -qi "release 6" /etc/redhat-release && echo 6 && return 0
+      grep -qi "release 7" /etc/redhat-release && echo 7 && return 0
+      grep -qi "release 8" /etc/redhat-release && echo 8 && return 0
+   elif [ $breed = sles ] && [ -f /etc/SuSE-release ]; then
+       grep "VERSION =" /etc/SuSE-release | cut cut -f 2 -d =    && return 0
+   fi
+   echo unknown
+   return 1
+
+}

@@ -1,0 +1,13 @@
+launchimage build - needed to log in and change nameserver to 8.8.8.8 when it boots in vnc - this is some oddity with my laptop as it is now because this used to work
+[centos@metal1 ~]$ lscpu
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                56
+On-line CPU(s) list:   0-55
+Thread(s) per core:    2
+Core(s) per socket:    14
+Socket(s):             2
+
+transcode that into slurm
+

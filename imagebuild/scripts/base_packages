@@ -1,0 +1,21 @@
+#!/bin/bash
+if [[ -x /usr/bin/yum ]]; then
+	INST="sudo yum -y install"
+	$INST  epel-release yum-utils
+	sudo yum -y makecache
+elif [[ -x /usr/bin/zypper ]] ; then
+	INST="sudo zypper -n install"
+	$INST wget mlocate ntp
+	$INST realmd sssd sssd-krb5 
+fi
+
+#TODO Base packages for SLES
+
+
+if [ -f /etc/sysconfig/selinux ] ; then
+	sudo sed 's/SELINUX=.*/SELINUX=disabled/'  /etc/sysconfig/selinux | sudo tee  /etc/sysconfig/selinux.tmp
+        sudo chmod 644 /etc/sysconfig/selinux.tmp
+        sudo mv /etc/sysconfig/selinux.tmp /etc/sysconfig/selinux
+fi
+sudo sed 's/server 3.centos.pool.ntp.org iburst/server 192.168.126.2  iburst/' | sudo tee /etc/ntp.conf.tmp
+sudo mv /etc/ntp.conf.tmp /etc/ntp.conf

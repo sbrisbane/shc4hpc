@@ -1,0 +1,5 @@
+#!/bin/sh
+cd /var/tmp
+wget https://cdn.pmylund.com/files/tools/cpuburn/linux/cpuburn-1.0-amd64.tar.gz
+tar xf cpuburn-1.0-amd64.tar.gz
+sudo mv cpuburn/cpuburn /usr/bin

@@ -1,0 +1,78 @@
+#!/bin/bash
+INST='sudo zypper -n install -y'
+#Dont actually need this on node images, but do on headnode
+#speed up deployment of headnode by pre-installing these
+#$INST python-openstackclient nc openvpn easyrsa screen telnet
+
+$INST curl
+AZCLIFROMREPO=0
+if [ 1 -eq "$AZCLIFROMREPO" ]; then
+#20200121 - version from el7 https://packages.microsoft.com/yumrepos/azure-cli is broken for template deployments, possibly other things but installs
+#         - version from Cloud:Tools missing azure-cli-apr > 2.2 on leap and wont install (tumbleweed has it)
+#         - os version works but spews errors loading command module 'taskhelp'
+# Would need some effort to purge the cloud tools rpms from leap azure base image in use, or else be very careful about updates
+
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo zypper addrepo --name 'Azure CLI' --check https://packages.microsoft.com/yumrepos/azure-cli azure-cli
+sudo zypper -n refresh
+$INST --from azure-cli azure-cli
+else
+   test -f /usr/bin/az && sudo zypper -n remove -y azure-cli
+   sudo tar xf /tmp/unpack/azurecli.tgz -C /
+   sudo ln -s /home/software/azcli/lib/azure-cli/bin/az /usr/bin/az
+fi
+
+
+#sudo zypper -n addrepo https://download.opensuse.org/repositories/filesystems:/ceph:/teuthology/openSUSE_Leap_15.1/filesystems:ceph:teuthology.repo
+
+
+
+##$INST beeond kernel-devel-$(uname -r) kernel-devel
+##/etc/init.d/beegfs-client rebuild
+
+if ! [ -d /root/.ssh ]; then
+    sudo mkdir -p /root/.ssh
+fi
+ROOTTEMPLATE=/usr/lib/shc4hpc/roottemplate/ 
+#sudo ssh-keygen -t rsa -f $ROOTTEMPLATE/.ssh/beeondkey -N ""
+#TODO
+#yes thats good, different keys for each image but really for poc use the same one
+#use the same one
+
+sudo chmod 600 $ROOTTEMPLATE/.ssh/beeondkey
+sudo chown -R root: $ROOTTEMPLATE/
+cat << EOF | sudo tee $ROOTTEMPLATE/.ssh/config
+host * 
+   IdentityFile /root/.ssh/beeondkey
+#These systems ids and IPs are going to change
+host osk* azure* headnode* metal* login* kvm*
+   StrictHostKeyChecking no
+   UserKnownHostsFile /dev/null
+EOF
+if ! [ -d /etc/skel/.ssh ]; then
+   sudo mkdir -p /etc/skel/.ssh
+fi
+cat << EOF | sudo tee -a /etc/skel/.ssh/config
+#These systems ids and IPs are going to change
+host osk* azure* metal* headnode* login* kvm*
+   StrictHostKeyChecking no
+   UserKnownHostsFile /dev/null
+   IdentityFile /home/%u/.ssh/id_rsa
+EOF
+
+sudo mkdir /data
+
+
+
+#$INST ceph
+
+$INST openmpi openmpi-devel
+
+sudo rpm -ivh https://packages.microsoft.com/opensuse/15/prod/packages-microsoft-prod.rpm
+$INST blobfuse fuse
+sudo mkdir /azure
+
+#Update OS
+sudo zypper -n update -y
+
+exit 0

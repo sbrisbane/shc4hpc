@@ -1,0 +1,8 @@
+#!/bin/sh
+if [ -x /usr/bin/yum ]; then
+	sudo yum -y makecache
+fi
+if [ -f /usr/bin/zypper ]; then
+	sudo /usr/bin/zypper -n ref
+fi
+echo $0 complete

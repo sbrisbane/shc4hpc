@@ -1,0 +1,113 @@
+#!/bin/bash
+
+#this file needs to run on the headnode
+#I need to know how to log into azure or openstack
+# TODO so this for now 
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+#OLD monolithic way to start nodes
+
+echo $0 invoked with $@
+
+nodename=$1
+OSOPTS='--insecure'
+NOVAOPTS="${OSOPTS}"
+NFSMASTER=$(get_nfsmaster $nodename)
+export NFSMASTER
+export VPN_SUBNET=$(get_config vpn_subnet)
+
+export NETID=$( get_config os_net_id )
+#I need to know how to start a machine - for the POC they are all the same size like, in real life we might want different sizes, packer keys per group etc
+export LDAP_JOIN_ACCOUNT=$(get_config ldap_join_account)
+export LDAP_REALM=$(get_config ldap_realm)
+export SSH_KEY=$(get_config ssh_key)
+GIMTMP=$(get_config os_goldenimage)
+if ! [ x == "$GIMTMP"x ]; then
+   export OS_GOLDENIMAGE=$GIMTMP
+fi
+echo $OS_GOLDENIMAGE is golden image
+
+count=0
+status=$(getnode_status $nodename)
+
+
+echo nodename is $nodename
+while [ $status = starting ] || [ $status = stopping ]; do
+  echo "want to start $nodename but its already $status, Ill wait a bit for it to finish"
+  sleep 60
+  count=$(( $count + 1 ))
+  if isOpenstack $nodename || isKVM $nodename ; then
+    echo $nodename in state $status for too long, I will try to clean it up and start it
+    node_shutdown $nodename fast
+    status=$(getnode_status $nodename)
+    break
+  fi
+  #wait up to 28 mins (set by azure/bm) and then give up
+  if [ $count -gt 28 ]; then
+    echo $nodename in state $status for too long, I will try to clean it up and start it
+    node_shutdown $nodename fast
+    status=$(getnode_status $nodename)
+    break
+  fi
+  status=$(getnode_status $nodename)
+done
+if [ $status = started ] ;then
+   echo "NODE $nodename already started, this is a bug?"
+   exit
+fi
+echo "Node is currently in state $status"
+echo nodename os $nodename
+
+#TODO rework this if needed
+if isOpenStack ${nodename} || isMetal ${nodename}; then
+
+   os_login || exit 1
+   oskvirtualcloudname=$(get_oskvirtualcloudname)
+   oskmetalcloudname=$(get_oskmetalcloudname)
+   PACKERKEY=PackerKey 
+   createuserdata $nodename
+
+   res=127
+   if isMetal ${nodename} ;then
+     echo "cloud: $oskmetalcloudname" >> "${LAUNCHCONFIG}" 	   
+     echo metal_startup ${nodename} "${LAUNCHCONFIG}"
+     metal_startup ${nodename} "${LAUNCHCONFIG}"
+     res=$?
+   else
+       echo "cloud: $oskvirtualcloudname" >> "${LAUNCHCONFIG}" 	   
+       echo openstack ${OSOPTS} server create --image ${OS_GOLDENIMAGE}  --flavor m1.small --key-name ${PACKERKEY} --nic net-id="${NETID}" ${nodename} --user-data="${LAUNCHCONFIG}" 
+       openstack ${OSOPTS} server create --image ${OS_GOLDENIMAGE}  --flavor m1.small --key-name ${PACKERKEY} --nic net-id="${NETID}" ${nodename} --user-data="${LAUNCHCONFIG}"
+       start_res=$?
+   fi
+
+
+
+elif isKVM ${nodename}; then
+	kvm_startup ${nodename}
+	res=$?
+
+elif isAzure ${nodename} ;then
+    #signal to clean up if there is an issue starting it, watchdog function off for POC set up phase for debugging
+    az_startup ${nodename}
+    start_res=$?
+    #update the startup file for the node
+fi
+
+if [ 0 -eq $start_res ] ; then
+     startup_watchdog $nodename
+else
+     echo a start command failed on node $nodename
+     node_shutdown $nodename fast
+     exit 1
+fi
+exit 0
+#I need to get the IP of the machine
+#I need to update the DNS (/etc/hosts on the master, at least thats fudged)
+#maybe the image can update its own - certainly easier like - yup that works...potentially dont even need dns/hosts but thats all tightyl integrated now it might be hard to remove
+
+#then 
+#scontrol update nodename=$nodename nodeaddr=thatIP nodehostname=osk1
+#on the node start slurmd with -b option????

@@ -1,0 +1,167 @@
+#!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if ! [ -n "$1" ]; then
+	echo Usage $0 nodename
+	exit 1
+fi
+
+# settings
+
+KVM_SSH_KEY=/root/.ssh/kvm_key
+KVM_USER=""
+KVM_HOST=""
+KVM_IMAGEDIR=""
+KVM_IMAGE=centos-centos-7.3.qcow2
+KVM_VMDIR=/data/virtualmachines
+
+KVM_SSH_KEY=$(get_config kvm_ssh_key)
+KVM_USER=$(get_config kvm_user)
+KVM_HOST=$(get_config kvm_host)
+KVM_IMAGEDIR=$(get_config kvm_imagedir)
+KVM_IMAGE=$(get_config kvm_image)
+KVM_VMDIR=$(get_config kvm_vmdir)
+
+LDAP_JOIN_ACCOUNT=$(get_config ldap_join_account)
+LDAP_REALM=$(get_config ldap_realm)
+
+
+VIRSHOPTS="-c qemu+ssh://$KVM_HOST/system"
+VIRTINSTALLOPTS="--connect qemu+ssh://$KVM_HOST/system"
+KVM_RAM=1024
+KVM_CPUS=1
+
+NFSMASTER=$(get_nfsmaster $NFSMASTER)
+export NFSMASTER
+
+
+setup_ssh()
+{
+   if [ -e /root/.ssh/configured ]; then
+       return
+   fi
+
+   user=$1
+   master=$2
+   key=$3
+   cat << EOF  >> /root/.ssh/config
+host $master
+   StrictHostKeyChecking no
+   User $user
+   UserKnownHostsFile=/dev/null        
+   IdentityFile $key
+EOF
+touch /root/.ssh/configured
+}
+
+# Take one argument from the commandline: VM name
+NODENAME=$1
+function createuserdata () {
+nodename=$1
+mkdir -p /tmp/slurmlaunch-$USER
+UNIQUENAME="$nodename-$RANDOM"
+export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$UNIQUENAME"
+
+
+cat << EOF > "${LAUNCHCONFIG}"
+#cloud-config
+timezone: "Europe/Dublin"
+runcmd:
+ - [ "/usr/sbin/slurm_instance.sh" ]
+ - [ yum, -y, remove, cloud-init ]
+
+# Configure where output will go
+output: 
+  all: ">> /var/log/cloud-init.log"
+nfsmaster: "${NFSMASTER}"
+slurmmaster: "$(hostname -s)"
+hostname: "${nodename}"
+fqdn: "${nodename}.hpc.poc"
+nodename: "${nodename}"
+master: no
+ldap_join_account: ${LDAP_JOIN_ACCOUNT}
+ldap_realm: ${LDAP_REALM}
+cloud: kvm
+EOF
+
+#fqdn: ${nodename}
+}
+
+setup_ssh $KVM_USER $KVM_HOST $KVM_SSH_KEY
+
+# Check if domain already exists
+virsh $VIRSHOPTS dominfo ${NODENAME} > /dev/null 2>&1
+if [ "$?" -eq 0 ]; then
+    echo -n "[WARNING] ${NODENAME} already exists.  "
+fi
+
+
+# Location of cloud image
+IMAGE=$KVM_IMAGEDIR/$KVM_IMAGE
+
+# Amount of RAM in MB
+MEM=$KVM_RAM
+
+# Number of virtual CPUs
+CPUS=$KVM_CPUS
+
+
+
+META_DATA=meta-data
+USER_DATA=user-data
+CI_ISO=${NODENAME}-cidata.iso
+DISK=$KVM_VMDIR/$NODENAME/${NODENAME}.qcow2
+ISOIMAGE=$KVM_VMDIR/$NODENAME/${NODENAME}.iso
+
+# Bridge for VMs (default on Fedora is virbr0)
+KVM_BRIDGE=virbr0
+
+# Start clean
+ssh $KVM_USER@$KVM_HOST "rm -rf $KVM_VMDIR/${NODENAME}"
+ssh $KVM_USER@$KVM_HOST "mkdir -p $KVM_VMDIR/${NODENAME}"
+
+
+    # Create log file
+    touch ${NODENAME}.log
+
+    echo "$(date -R) Destroying the ${NODENAME} domain (if it exists)..."
+    # Remove domain with the same name
+    virsh $VIRSHOPTS destroy ${NODENAME} >> $NODNENAME.log 2>&1
+    virsh $VIRSHOPTS undefine ${NODENAME} >> ${NODENAME}.log 2>&1
+
+# Cloud init files
+createuserdata ${NODENAME}
+cp $LAUNCHCONFIG $USER_DATA
+
+
+
+    echo "instance-id: ${NODENAME}; local-hostname: ${NODENAME}" > $META_DATA
+    echo "$(date -R) Copying template image..."
+    ssh  ${KVM_USER}@${KVM_HOST} cp $IMAGE $DISK
+    # Create CD-ROM ISO with cloud-init config
+    echo "$(date -R) Generating ISO for cloud-init..."
+    echo genisoimage -output $CI_ISO -volid cidata -joliet -r $USER_DATA $META_DATA  &>> ${NODENAME}.log
+    genisoimage -output $CI_ISO -volid cidata -joliet -r $USER_DATA $META_DATA &>> ${NODENAME}.log
+
+    scp $CI_ISO ${KVM_USER}@${KVM_HOST}:${ISOIMAGE}
+    echo "$(date -R) Installing the domain and adjusting the configuration..."
+    echo "[INFO] Installing with the following parameters:"
+    echo "virt-install $VIRTINSTALLOPTS  --import --name ${NODENAME} --ram $MEM --vcpus $CPUS --disk
+    $DISK,format=qcow2,bus=virtio --disk $ISOIMAGE,device=cdrom --network
+    bridge=${KVM_BRIDGE},model=virtio --os-type=linux --os-variant=rhel6 --noautoconsole"
+
+    virt-install $VIRTINSTALLOPTS --import --name ${NODENAME} --ram $MEM --vcpus $CPUS --disk \
+    $DISK,format=qcow2,bus=virtio --disk $ISOIMAGE,device=cdrom --network \
+    bridge=${KVM_BRIDGE},model=virtio --os-type=linux --os-variant=rhel6 --noautoconsole
+
+    sleep 50
+    # Eject cdrom
+    virsh $VIRSHOPTS change-media ${NODENAME} hda --eject --config >> ${NODENAME}.log
+    # Remove the unnecessary cloud init files
+    
+#    rm $CI_ISO
+
+

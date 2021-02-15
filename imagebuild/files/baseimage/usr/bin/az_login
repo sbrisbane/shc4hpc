@@ -1,0 +1,15 @@
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+function az_login {
+    AZ_APP_ID=$(get_config az_app_id)
+    AZ_SECRET=$(get_secret_config az_secret $AZ_APP_ID)
+    AZ_TENANT_ID=$(get_config az_tenant_id)
+    AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
+
+    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_SECRET"
+    az account set --subscription "${AZ_SUBSCRIPTION_ID}"
+}
+

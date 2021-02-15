@@ -1,0 +1,89 @@
+{
+    "variables": {
+        "os_username": "{{env `OS_USERNAME`}}",
+        "os_tenant_name": "{{env `OS_PROJECT_NAME`}}",
+        "os_domain_name": "{{env `OS_USER_DOMAIN_NAME`}}",
+        "os_auth_url": "{{env `OS_AUTH_URL`}}",
+        "os_password": "{{env `OS_PASSWORD`}}"
+        "az_client_id": "{{env `AZ_CLIENT_ID1}}",
+        "az_client_secret": "{{env `AZ_CLIENT_SECRET`}}",
+        "az_tenant_id": "{{env `AZ_TENANT_ID`}}",
+        "az_subscription_id": "{{env `AZ_SUBSCRIPTION_ID`}}",
+        "az_image_rg": "{{env `AZ_IMAGE_RG`}}",
+        "az_goldenimage": "{{env `AZ_GOLDEN_IMAGE`}}",
+
+    },
+
+
+  "builders": [{
+    "type": "azure-arm",
+
+    "client_id": "[variables('az_client_id')]",
+    "client_secret": "[variables('az_client_secret')]",
+    "tenant_id": "[variables('az_tenant_id')]",
+    "subscription_id": "[variables('az_subscription_id')]",
+
+    "managed_image_resource_group_name": "[variables('az_image_rg')]",
+    "managed_image_name": "[variables('az_goldenimage')]",
+
+    "os_type": "Linux",
+    "image_publisher": "OpenLogic",
+    "image_offer": "CentOS-HPC",
+    "image_sku": "7.1",
+
+    "azure_tags": {
+        "dept": "RCSI",
+        "task": "Image deployment"
+    },
+
+    "location": "West Europe",
+    "vm_size": "Standard_D2s_v3"
+  }],
+
+    "provisioners": [{
+        "type": "file",
+        "source": "files/munge.key",
+        "destination": "/tmp/munge.key"
+    },
+    {
+        "type": "file",
+        "source": "files/slurm_instance.sh",
+        "destination": "/tmp/slurm_instance.sh"
+    },
+    {
+        "type": "file",
+        "source": "files/baseimageblob.tgz",
+        "destination": "/tmp/baseimageblob.tgz"
+
+    },
+    {
+        "type": "file",
+        "source": "files/shc4hpcblob.tgz",
+        "destination": "/tmp/shc4hpcblob.tgz"
+
+    },
+    {
+        "type": "file",
+        "source": "files/userdefinedblob.tgz",
+        "destination": "/tmp/userdefinedblob.tgz"
+
+    },
+    {
+        "type": "file",
+        "source": "files/slurmrpms.tgz",
+        "destination": "/tmp/slurmrpms.tgz"
+
+    },
+    {
+        "type": "shell", 
+        "scripts": ["scripts/fixtty", "scripts/unpackbaseimage", "scripts/unpackshc4hpc", "scripts/unpackuserdefined" "scripts/package_manager", "scripts/base_packages", "scripts/ldap_auth", "scripts/install_slurm", "scripts/user_software", "scripts/install_custom_packages", "scripts/azure", "scripts/final" ]
+    },
+    {
+        "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+        "inline": [
+          "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
+        ],
+        "inline_shebang": "/bin/sh -x",
+        "type": "shell"
+    }]
+}

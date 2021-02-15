@@ -1,0 +1,337 @@
+########################################################
+#  Configuration file for Slurm - 2019-07-10T13:12:05  #
+########################################################
+#
+#
+#
+################################################
+#                   CONTROL                    #
+################################################
+ClusterName=hpc
+SlurmUser=slurm
+SlurmctldPort=6817
+SlurmdPort=6818
+SlurmdUser=root
+#
+################################################
+#            LOGGING & OTHER PATHS             #
+################################################
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+SlurmdPidFile=/var/run/slurmd.pid
+SlurmdSpoolDir=/var/spool/slurm/d
+#SlurmSchedLogFile=
+SlurmctldPidFile=/var/run/slurmctld.pid
+StateSaveLocation=/var/spool/slurm/ctld
+#
+################################################
+#                  ACCOUNTING                  #
+################################################
+#AccountingStorageBackupHost=
+AccountingStorageEnforce=associations,limits,qos,safe
+#AccountingStorageLoc=
+AccountingStoragePort=6819
+AccountingStorageType=accounting_storage/slurmdbd
+#AccountingStorageUser=
+AccountingStoreJobComment=Yes
+AcctGatherEnergyType=acct_gather_energy/none
+AcctGatherFilesystemType=acct_gather_filesystem/none
+AcctGatherInterconnectType=acct_gather_interconnect/none
+AcctGatherNodeFreq=0
+AcctGatherProfileType=acct_gather_profile/none
+ExtSensorsType=ext_sensors/none
+ExtSensorsFreq=0
+JobAcctGatherFrequency=30
+JobAcctGatherType=jobacct_gather/none
+#
+################################################
+#           SCHEDULING & ALLOCATION            #
+################################################
+
+PreemptMode=OFF
+PreemptType=preempt/none
+PreemptExemptTime=00:00:00
+PriorityType=priority/multifactor
+#SchedulerParameters=
+SchedulerParameters=sbatch_wait_nodes,bf_busy_nodes
+SchedulerTimeSlice=30
+SchedulerType=sched/backfill
+SelectType=select/cons_res
+SelectTypeParameters=CR_CORE
+SlurmSchedLogLevel=0
+#
+################################################
+#                   TOPOLOGY                   #
+################################################
+TopologyPlugin=topology/none
+#
+################################################
+#                    TIMERS                    #
+################################################
+BatchStartTimeout=10
+CompleteWait=0
+EpilogMsgTime=2000
+GetEnvTimeout=2
+InactiveLimit=0
+KillWait=30
+MinJobAge=300
+SlurmctldTimeout=300
+SlurmdTimeout=300
+WaitTime=0
+#
+################################################
+#                    POWER                     #
+################################################
+#ResumeFailProgram=/apps/system/slurm/SHC4HPC/bin/slurm_fail
+#ResumeProgram=/apps/system/slurm/SHC4HPC/bin/slurm_resume
+#SuspendProgram=/apps/system/slurm/SHC4HPC/bin/slurm_suspend
+ResumeFailProgram=/usr/lib/shc4hpc/handlers/recovery/node_recovery
+ResumeProgram=/usr/lib/shc4hpc/shc4hpc/handlers/resume/node_resume
+SuspendProgram=/usr/lib/shc4hpc/handlers/suspend/node_suspend
+ResumeRate=30
+ResumeTimeout=520
+SuspendExcNodes=headnode1
+#SuspendExcParts=
+
+SuspendRate=60
+SuspendTime=900
+SuspendTimeout=70
+#
+################################################
+#                    DEBUG                     #
+################################################
+DebugFlags=NodeFeatures,NO_CONF_HASH,power,NodeFeatures,powersave
+SlurmctldDebug=info
+SlurmdDebug=info
+#
+################################################
+#               EPILOG & PROLOG                #
+################################################
+#Epilog=
+#Prolog=
+#SrunEpilog=
+#SrunProlog=
+#TaskEpilog=
+#TaskProlog=
+#
+################################################
+#               PROCESS TRACKING               #
+################################################
+ProctrackType=proctrack/cgroup
+#
+################################################
+#             RESOURCE CONFINEMENT             #
+################################################
+TaskPlugin=task/none
+#TaskPluginParam=
+#
+################################################
+#                    OTHER                     #
+################################################
+AccountingStorageTRES=cpu,mem,energy,node,billing,fs/disk,vmem,pages,gres/gpu
+AllowSpecResourcesUsage=0
+#AuthAltTypes=
+#AuthInfo=
+AuthType=auth/munge
+#BurstBufferType=
+CheckpointType=checkpoint/none
+#CliFilterPlugins=
+#For cloud nodes with changing IP
+CommunicationParameters=NoAddrCache
+CoreSpecPlugin=core_spec/none
+CpuFreqDef=Performance
+CpuFreqGovernors=Performance,OnDemand,UserSpace
+CredType=cred/munge
+#DefMemPerNode=
+DisableRootJobs=No
+EioTimeout=60
+EnforcePartLimits=NO
+#EpilogSlurmctld=
+FairShareDampeningFactor=1
+#FederationParameters=
+FirstJobId=1
+#GresTypes=
+GpuFreqDef=high,memory=high
+GroupUpdateForce=1
+GroupUpdateTime=600
+HealthCheckInterval=0
+HealthCheckNodeState=ANY
+#HealthCheckProgram=
+#JobAcctGatherParams=
+JobCheckpointDir=/var/slurm/checkpoint
+JobCompHost=localhost
+JobCompLoc=/var/log/slurm/job_completions
+JobCompPort=0
+JobCompType=jobcomp/none
+JobCompUser=root
+JobContainerType=job_container/none
+#JobCredentialPrivateKey=
+#JobCredentialPublicCertificate=
+#JobDefaults=
+JobFileAppend=0
+JobRequeue=1
+#JobSubmitPlugins=
+#KeepAliveTime=
+KillOnBadExit=0
+#LaunchParameters=
+LaunchType=launch/slurm
+#Layouts=
+#Licenses=
+#LicensesUsed=
+LogTimeFormat=iso8601_ms
+#MailDomain=
+MailProg=/bin/mail
+MaxArraySize=1001
+MaxJobCount=10000
+MaxJobId=67043328
+MaxMemPerNode=UNLIMITED
+MaxStepCount=40000
+MaxTasksPerNode=512
+MCSPlugin=mcs/none
+#MCSParameters=
+MessageTimeout=10
+MpiDefault=none
+#MpiParams=
+#MsgAggregationParams=
+#NodeFeaturesPlugins=
+OverTimeLimit=0
+#PluginDir=/apps/system/slurm/19.05.0/lib/slurm
+#PlugStackConfig=/apps/system/slurm/19.05.0/etc/plugstack.conf
+#PowerParameters=
+#PowerPlugin=
+#PriorityParameters=
+#PrioritySiteFactorParameters=
+#PrioritySiteFactorPlugin=
+PriorityDecayHalfLife=7-00:00:00
+PriorityCalcPeriod=00:05:00
+PriorityFavorSmall=No
+PriorityFlags=NO_FAIR_TREE
+PriorityMaxAge=10-00:00:00
+PriorityUsageResetPeriod=NONE
+PriorityWeightAge=10000
+PriorityWeightAssoc=0
+PriorityWeightFairShare=1000
+PriorityWeightJobSize=10000
+PriorityWeightPartition=10000000
+PriorityWeightQOS=10000000
+#PriorityWeightTRES=
+PrologEpilogTimeout=65534
+#PrologSlurmctld=
+PrologFlags=Alloc,Contain,X11
+PropagatePrioProcess=0
+PropagateResourceLimits=ALL
+#PropagateResourceLimitsExcept=
+#RebootProgram=
+#ReconfigFlags=
+#RequeueExit=
+#RequeueExitHold=
+#ResumeFailProgram=
+#ResvEpilog=
+ResvOverRun=0
+#ResvProlog=
+ReturnToService=2
+RoutePlugin=route/default
+#SallocDefaultCommand=
+#SbcastParameters=
+#SlurmctldAddr=
+SlurmctldHost=dublxmpv05
+SlurmctldSyslogDebug=debug4
+#SlurmctldPrimaryOffProg=
+#SlurmctldPrimaryOnProg=
+SlurmctldParameters=enable_configless,idle_on_node_suspend
+#SlurmctldParameters=cloud_dns
+PrivateData=cloud
+#SlurmdParameters=
+#FastSchedule=2
+SlurmdParameters=config_overrides
+SlurmdSyslogDebug=debug
+#SlurmctldPlugstack=
+SrunPortRange=0-0
+SwitchType=switch/none
+TCPTimeout=2
+TmpFS=/tmp
+#TopologyParam=
+TrackWCKey=No
+TreeWidth=50
+UsePam=0
+#UnkillableStepProgram=
+UnkillableStepTimeout=60
+VSizeFactor=0
+#X11Parameters=
+#
+################################################
+#                    NODES                     #
+################################################
+NodeName=dublxmpv05 Boards=1 CoresPerSocket=1 SocketsPerBoard=2 ThreadsPerCore=1 State=UNKNOWN Feature=head,opencps1,opencps6,pspro1
+#NodeName=dublxmpp01 Sockets=2 CoresPerSocket=6 ThreadsPerCore=1  State=UNKNOWN Feature=debug,opencps2,opencps6
+
+NodeName=dublxmpn41 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug,pspro1
+NodeName=dublxmpn42 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug,pspro1
+NodeName=dublxmpn43 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug,pspro1
+NodeName=dublxmpn44 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug
+NodeName=dublxmpn45 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug
+NodeName=dublxmpn46 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug
+NodeName=dublxmpn47 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=CLOUD Feature=debug
+NodeName=dublxmpn57 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn58 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn59 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn60 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn61 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn62 CPUS=16 SocketsPerBoard=2 CoresPerSocket=8 State=UNKNOWN Feature=debug
+NodeName=dublxmpn63 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn64 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn65 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn66 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn67 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn68 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn69 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn70 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn71 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn72 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn73 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn74 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn75 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn76 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn77 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn78 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn79 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn80 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+NodeName=dublxmpn81 CPUS=40 SocketsPerBoard=2 CoresPerSocket=20 State=UNKNOWN Feature=debug
+
+NodeSet=debug Feature=debug
+NodeSet=sspacesmall Feature=sspacesmall
+NodeSet=opencps3 Feature=opencps3
+NodeSet=opencps2 Feature=opencps2
+NodeSet=fatnode Feature=fatnode
+NodeSet=opencps6 Feature=opencps6
+NodeSet=opencps4 Feature=opencps4
+NodeSet=gen5 Feature=gen5
+NodeSet=pspro1 Feature=pspro1
+NodeSet=dataload Feature=dataload
+NodeSet=datamove Feature=datamove
+NodeSet=opencps1 Feature=opencps1
+NodeSet=pspro2 Feature=pspro2
+NodeSet=opencps5 Feature=opencps5
+#
+################################################
+#                  PARTITIONS                  #
+################################################
+PartitionName=debug Default=YES MinNodes=0 Nodes=dublxmpn[41-47] State=UP
+
+PartitionName=sspace_small MinNodes=0 State=UP Nodes=sspacesmall
+PartitionName=opencps_3 MinNodes=0 State=UP Nodes=opencps3
+PartitionName=opencps_2 MinNodes=0 State=UP Nodes=opencps2
+PartitionName=fatnode MinNodes=0 State=UP Nodes=fatnode
+PartitionName=opencps_6 MinNodes=0 State=UP Nodes=opencps6
+PartitionName=opencps_4 MinNodes=0 State=UP Nodes=opencps4
+PartitionName=gen5 MinNodes=0 State=UP Nodes=gen5
+PartitionName=pspro_1 MinNodes=0 State=UP Nodes=pspro1
+PartitionName=dataload MinNodes=0 State=UP Nodes=dataload
+PartitionName=datamove MinNodes=0 State=UP Nodes=datamove
+PartitionName=opencps_1 MinNodes=0 State=UP Nodes=opencps1
+PartitionName=pspro_2 MinNodes=0 State=UP Nodes=pspro2
+PartitionName=opencps_5 MinNodes=0 State=UP Nodes=opencps5
+
+
+
+

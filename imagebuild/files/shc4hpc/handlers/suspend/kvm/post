@@ -1,0 +1,52 @@
+#!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if ! [ -n $1 ]; then
+	echo Usage $0 nodename
+	exit 1
+fi
+
+# settings
+
+KVM_SSH_KEY=/root/.ssh/kvm_key
+KVM_USER=brisbane
+KVM_HOST=192.168.122.1
+KVM_IMAGEDIR=/home/brisbane/osdev/Build/output-centos-centos-7.3
+KVM_IMAGE=centos-centos-7.3.qcow2
+KVM_VMDIR=/data/virtualmachines
+
+KVM_SSH_KEY=$(get_config kvm_ssh_key)
+KVM_USER=$(get_config kvm_user)
+KVM_HOST=$(get_config kvm_host)
+KVM_IMAGEDIR=$(get_config kvm_imagedir)
+KVM_IMAGE=$(get_config kvm_image)
+KVM_VMDIR=$(get_config kvm_vmdir)
+
+VIRSHOPTS="-c qemu+ssh://$KVM_HOST/system"
+VIRTINSTALLOPTS="--connect qemu+ssh://$KVM_HOST/system"
+KVM_RAM=1024
+KVM_CPUS=1
+
+NODENAME=$1
+
+# Check if domain already exists
+virsh $VIRSHOPTS dominfo ${NODENAME} > /dev/null 2>&1
+if [ "$?" -ne 0 ]; then
+    echo -n "[WARNING] ${NODENAME} does not exist.  "
+fi
+
+
+
+
+    # Create log file
+    touch ${NODENAME}.log
+
+    echo "$(date -R) Destroying the ${NODENAME} domain (if it exists)..."
+    # Remove domain with the same name
+    virsh $VIRSHOPTS destroy ${NODENAME} >> $NODNENAME.log 2>&1
+    virsh $VIRSHOPTS undefine ${NODENAME} >> ${NODENAME}.log 2>&1
+    ssh $KVM_USER@$KVM_HOST "rm -rf $KVM_VMDIR/${NODENAME}"
+    ssh $KVM_USER@$KVM_HOST "mkdir -p $KVM_VMDIR/${NODENAME}"

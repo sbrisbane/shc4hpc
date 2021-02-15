@@ -1,0 +1,26 @@
+#!/bin/bash
+#This script handles actions for specific nodes that fail to resume after resume timeout
+#it is not meant to be called directly
+#get environment settings
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+
+info $1 
+node=$1
+n=$node
+reason=recovery
+nodetype=$(nodetype $node)
+
+#Works reliably with SLURM v20 - all other mechanisms removed.  Slurm v20 and this mechanism is now a relaible approach
+#Drop support for all previous versions
+    [ -f $SHC4HPCBASE/handlers/recovery/$nodetype/pre ] && $SHC4HPCBASE/handlers/recovery/$nodetype/pre $node
+    verbose scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
+    scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
+    if [ $? -ne 0 ]; then
+       warning scontrol update nodename="$n" reason="$reason" state=POWER_DOWN failed, you may need to manually recover $node
+    fi
+    [ -f $SHC4HPCBASE/handlers/recovery/$nodetype/post ] && $SHC4HPCBASE/handlers/recovery/$nodetype/post $node

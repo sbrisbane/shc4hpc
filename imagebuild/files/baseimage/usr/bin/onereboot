@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ -f /needreboot ];then
+   /bin/rm -f /needreboot
+   /sbin/reboot
+fi
+exit 0

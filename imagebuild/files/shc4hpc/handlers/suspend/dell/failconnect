@@ -1,0 +1,37 @@
+#!/bin/bash
+#get environment settings
+
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/dell/functions ] && . $SHC4HPCBASE/lib/dell/functions
+
+export DRACMAPS=$SHC4HPCBASE/etc/shc4hpc/idracmaps
+export DELLBASE=${DELLBASE:-/opt/dell/srvadmin}
+
+export LD_LIBRARY_PATH=$DELLBASE/lib64:$DELLBASE/lib64/openmanage/private
+debug "Running failconnect for dell"
+node=$1
+dell_node2rac $node
+echo $node 
+racip=$(dell_node2rac $node)
+if [ $? -ne 0 ] || [ -z $racip ]; then
+  error "Gettig rac ip for $node"  
+  exit 1
+fi
+
+
+CREDS=$(idrac_creds $node)
+
+#Try powering it down if it is not actually contactable
+#ssh -o ConnectTimeout=5 -i /usr/lib/slurm/id_slurm $node hostname  || $DELL/bin/idracadm7 $CREDS -r $racip serveraction powerdown
+info  "$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerdown"
+$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerdown
+if [ $? -ne 0 ]; then 
+   warning "$DELLBASE/bin/idracadm7 $CREDS -r $racip serveraction powerdown failed - its possible the server is already off or it failed to connect to $racip?"
+fi
+exit 0
+   
+
+

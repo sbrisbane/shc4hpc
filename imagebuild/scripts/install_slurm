@@ -1,0 +1,94 @@
+#!/bin/bash
+if [[ -x /usr/bin/yum ]]; then
+	INST='sudo yum -y install'
+	LOCALINST='sudo yum -y --nogpgcheck localinstall '
+	SLURMVERSION=20.11.3
+	whoami | sudo tee /root/packeruser
+	$INST epel-release
+	
+	$INST  mariadb-server mariadb-devel libssh2 libssh2-devel
+	$INST munge munge-libs munge-devel 
+	$INST openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad 
+	$INST rpm-build perl-ExtUtils-MakeMaker gcc
+	#Dont uncomment this unless you know what you are doing - this is once per cluster
+	#$INST rng-tools
+	#rngd -r /dev/urandom
+	#/usr/sbin/create-munge-key -r
+	
+	cd $HOME
+	#We might already have sources available, somehow
+	if [ -f /tmp/slurmrpms.tgz ]; then
+	   tar xf /tmp/slurmrpms.tgz -C $HOME
+	fi
+	if ! [ -f $HOME/rpmbuild/RPMS/x86_64/slurm-slurmd-${SLURMVERSION}-1.el7.centos.x86_64.rpm ]; then
+	   mkdir -p rpmbuild/SOURCES
+	   cd rpmbuild/SOURCES/
+	   /usr/bin/wget https://download.schedmd.com/slurm/slurm-${SLURMVERSION}.tar.bz2
+	
+	   rpmbuild -ta slurm-${SLURMVERSION}.tar.bz2
+	fi
+	
+	cd $HOME/rpmbuild/RPMS/x86_64
+	
+	$LOCALINST slurm-slurmd-${SLURMVERSION}.el7.x86_64.rpm slurm-${SLURMVERSION}.el7.x86_64.rpm slurm-devel-${SLURMVERSION}.el7.x86_64.rpm slurm-munge-${SLURMVERSION}.el7.x86_64.rpm slurm-contribs-${SLURMVERSION}.el7.x86_64.rpm slurm-perlapi-${SLURMVERSION}.el7.x86_64.rpm slurm-torque-${SLURMVERSION}.el7.x86_64.rpm slurm-slurmctld-${SLURMVERSION}.el7.x86_64.rpm  slurm-slurmdbd-${SLURMVERSION}.el7.x86_64.rpm slurm-example-configs-${SLURMVERSION}.el7.x86_64.rpm
+	#Where are these slurm-plugins slurm-munge? 
+
+	#RHEL Specific Config
+	sudo mv /etc/slurm/cgroup.conf.example   /etc/slurm/cgroup.conf
+
+elif [[ -x /usr/bin/zypper ]]; then
+	INST="sudo zypper --non-interactive --no-gpg-checks  install --auto-agree-with-licenses -y "
+	sudo zypper --non-interactive --no-gpg-checks ar --name "Network Cluster" --check https://download.opensuse.org/repositories/network:/cluster/openSUSE_Leap_15.1/ network-cluster
+	sudo rpm --import "http://download.opensuse.org/repositories/network:/cluster/openSUSE_Leap_15.1/repodata/repomd.xml.key"
+	sudo zypper -n ref
+	$INST slurm slurm-devel slurm-munge perl-slurm slurm-torque slurm-slurmdbd slurm-config slurm-plugins mariadb
+else
+	echo Error neither zypper or yum found exiting
+	exit 1
+fi
+
+
+sudo mv /tmp/munge.key /etc/munge/
+sudo mv /tmp/slurm_instance.sh /usr/sbin
+sudo chmod 755 /usr/sbin/slurm_instance.sh
+sudo chown root:root /usr/sbin/slurm_instance.sh
+#maybe should be in useer data
+sudo chmod 600 /etc/munge/munge.key
+sudo chown munge: /etc/munge/munge.key
+sudo systemctl enable munge 
+
+sudo mkdir -p /var/spool/slurm/
+#sudo chown slurm. /var/spool/slurmctld
+sudo chmod 755 /var/spool/slurm
+
+#TODO may not be needed?
+
+
+sudo mkdir -p  /var/spool/slurmctld
+#sudo chown slurm: /var/spool/slurmctld
+sudo chmod 755 /var/spool/slurmctld
+sudo touch /var/log/slurmctld.log
+#sudo chown slurm: /var/log/slurmctld.log
+sudo touch /var/log/slurm_jobacct.log /var/log/slurm_jobcomp.log
+#sudo chown slurm: /var/log/slurm_jobacct.log /var/log/slurm_jobcomp.log
+sudo mkdir /var/spool/slurmd
+#sudo chown slurm: /var/spool/slurmd
+sudo chmod 755 /var/spool/slurmd
+sudo touch /var/log/slurmd.log
+#sudo chown slurm: /var/log/slurmd.log
+
+#sudo mv /etc/slurm/cgroup.conf.example   /etc/slurm/cgroup.conf
+cat << EOF | sudo tee /etc/slurm/cgroup.conf
+CgroupAutomount=yes 
+CgroupReleaseAgentDir="/etc/slurm/cgroup" 
+
+ConstrainCores=yes
+ConstrainDevices=yes
+ConstrainRAMSpace=no
+EOF
+echo finished exit code forced zero
+
+#Do this on first run after setting who I am
+#systemctl enable slurmd 
+#if master
+#systemctl enable slurmctld

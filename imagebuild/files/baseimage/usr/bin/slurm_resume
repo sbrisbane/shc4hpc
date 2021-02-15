@@ -1,0 +1,24 @@
+#!/bin/bash
+# Example ResumeProgram
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+echo "`date` Resume invoked $0 $*" >>/var/log/power_save.log
+hosts=`scontrol show hostnames $1`
+echo execution environment is: >> /var/log/power_save.log
+env >> /var/log/power_save.log
+echo running as `whoami` >> /var/log/power_save.log
+
+for host in $hosts
+do
+   sudo node_startup $host >> /var/log/power_save.log 2>&1 &
+   if [ $? -ne 0 ]; then
+     RETURNCODE=$?
+   fi
+   sleep 2
+done
+
+exit $RETURNCODE
+

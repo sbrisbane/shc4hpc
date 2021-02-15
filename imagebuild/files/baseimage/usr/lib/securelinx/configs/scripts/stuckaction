@@ -1,0 +1,4 @@
+#!/bin/bash
+echo stuck > /tmp/o
+env >> /tmp/o
+echo $@ >> /tmp/o

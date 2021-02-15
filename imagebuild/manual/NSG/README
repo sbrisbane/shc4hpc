@@ -1,0 +1,5 @@
+why allow all inbound tcp from 192.168.126 network is what allows allows inbound tcp from 10.1 to 10.0 via 192.168.126.140
+
+vpn servers network interface settings needs ip forwardign and route table for your lan
+
+rule for 10./8 already  in place when this was done 

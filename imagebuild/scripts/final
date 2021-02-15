@@ -1,0 +1,12 @@
+#!/bin/bash
+cat << EOF | sudo tee /etc/ssh/ssh_config
+Host *
+   UserKnownHostsFile /dev/null
+   CheckHostIp no
+   StrictHostKeyChecking no  
+EOF
+
+if [[ -x /usr/bin/yum ]]; then
+	sudo yum-config-manager --disable epel > /dev/null
+	sudo yum-config-manager --disable centos-openstack-* > /dev/null
+fi

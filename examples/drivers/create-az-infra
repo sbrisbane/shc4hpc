@@ -1,0 +1,119 @@
+#!/bin/bash
+
+#Requirenemtns:
+#az ad sp create-for-rbac --query "{ client_id: appId, client_secret: password, tenant_id: tenant }"
+#echo  copy the "client_id", "client_secret", "tenant_id", and note your subscription
+#ensure all 4 of these isset inenviron
+if [ -f environ ] || [ -f environ.secret ]; then
+
+    echo it looks like your intiial infra may be set up.  Do you want to delete your accounts and retry?
+    echo if so, clean up your accounts and then remove environ and environ.secret
+    echo try to ignore initiall app id provision and continue?
+    echo "ctrl+c to quit"
+    read continue
+    if [ $continue != y ]; then exit 1; fi
+    skip_app_init=1
+fi
+APPNAME=shc4hpc
+
+function edit_env_file ()
+{
+   VAR="$1"
+   VAL="$2"
+   FILE="$3"
+   sed -i "s/^export $VAR=.*/export $VAR=$VAL/" $FILE
+}
+function edit_main_env_file()
+{
+    edit_env_file $1 $2 environ
+}
+
+function edit_secret_env_file()
+{
+edit_env_file $1 $2 environ.secret
+}
+function check_az_login()
+{
+  az account get-access-token --query "expiresOn" --output tsv  
+  return $?
+}
+function get_sub_id_from_tokens()
+{
+mkdir -p $AZTMPDIR
+az account list --query '[?isDefault].{  "id" : "id" }' > ${AZTMPDIR}/subscription
+get_var id ${AZTMPDIR}/subscription
+}
+get_var()
+{
+ grep $1 $2 | cut -f 2 -d : | sed 's/[\", ]//g'
+
+}
+if [ -z "$skip_app_init" ]; then
+    which az || exit 1
+    check_az_login
+    export AZTMPDIR="/tmp/azure_$USER"
+    AZ_SUBSCRIPTION_ID=$(get_sub_id_from_tokens)
+    if [ $? -ne 0 ]; then
+       echo need to loging and have subscription set
+       exit 1
+    fi
+    cp environ.example environ
+    cp environ.secret.example environ.secret
+    chmod 0600 environ.secret
+
+    mkdir -p $AZTMPDIR
+    chmod 700 $AZTMPDIR
+    az ad sp create-for-rbac -n $APPNAME --role Contributor --query "{ client_id: appId, client_secret: password, tenant_id: tenant }" > $AZTMPDIR/rbacids 2>&1
+    if [ $? -ne 0 ] ; then
+       echo something went wrong with creating the app
+       /bin/rm -f $AZTMPDIR/rbacids
+       exit 1
+    fi
+    AZ_CLIENT_ID="$(get_var client_id $AZTMPDIR/rbacids)"
+    AZ_CLIENT_SECRET="$(get_var client_secret $AZTMPDIR/rbacids)"
+    AZ_TENANT_ID="$(get_var tenant_id $AZTMPDIR/rbacids)"
+    edit_secret_env_file AZ_CLIENT_SECRET $AZ_CLIENT_SECRET 
+    edit_main_env_file AZ_CLIENT_ID $AZ_CLIENT_ID
+    edit_main_env_file AZ_SUBSCRIPTION_ID $AZ_SUBSCRIPTION_ID
+    edit_main_env_file AZ_TENANT_ID $AZ_TENANT_ID
+
+fi
+
+. environ
+#export AZ_CLIENT_ID=""
+#export AZ_CLIENT_SECRET=""
+#export AZ_TENANT_ID=""
+#export AZ_SUBSCRIPTION_ID=""
+
+
+#export AZ_APP_ID=$AZ_CLIENT_ID
+#export AZ_APP_SECRET=$AZ_APP_SECRET
+#export AZ_IMAGE_RG=rgSUSECON-Infra
+#export AZ_RESOURCE_GROUP=rgSUSECON-Infra
+#export AZ_IMAGE_NAME="SHC4HPC-SUSECON-OPENSUSE-v1.2"
+#export AZ_GOLDENIMAGE="$AZ_IMAGE_NAME"
+#export AZ_REGION=westeurope
+#export AZ_NET_RG=SHC4HPC-Traditional-HPC
+#export AZ_IMAGE_RG=SHC4HPC-Traditional-HPC
+#export AZ_VNET_NAME=SHC4HPC-Traditional-vnet
+#export AZ_SUBNET_NAME=default
+#export AZ_SUBNET="172.16.1.0/24"
+
+
+#disable_root: false
+#az_image_rg: "PoCRG"
+#az_subnet: "172.16.1.0/24"
+#az_vpn_server_internal: "10.0.3.6"
+#az_os_router: "10.0.3.6"
+#az_resource_group: PoCHPC
+#az_goldenimage: "pocv1_0"
+#nfsmaster: "172.16.1.4"
+#ntpserver: "ntp.ubuntu.com"
+
+
+az group create -n "${AZ_NET_RG}" -l $AZ_REGION 
+az group create -n "${AZ_IMAGE_RG}" -l $AZ_REGION 
+az group create -n "${AZ_RESOURCE_GROUP}" -l $AZ_REGION 
+
+az network public-ip show  --resource-group $AZ_RESOURCE_GROUP --name ${AZ_HEADNODE_IPNAME} || az network public-ip create  --resource-group $AZ_RESOURCE_GROUP --name ${AZ_HEADNODE_IPNAME}  --allocation-method static
+az network vnet create -g "${AZ_NET_RG}"  -n "${AZ_VNET_NAME}" --address-prefix "$AZ_SUBNET"   --subnet-name "${AZ_SUBNET_NAME}"  --subnet-prefix "$AZ_SUBNET" 

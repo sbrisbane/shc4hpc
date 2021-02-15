@@ -1,0 +1,93 @@
+#!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+#this file needs to run on the headnode
+#In theory I need to know what the openstack login and location is
+#Then I probably should know which group Im in, but that can be configured at master start up time
+#I need to know how to log into azure or openstack
+
+#I need to know how to start a machine - for the POC they are all the same size like, in real life we might want different sizes, packer keys per group etc
+nodename=$1
+fast=0
+if [[ $2 ]] && [[ $2 = fast ]]; then
+    echo skipping checks, just delete node
+    fast=1
+else
+count=0
+status=$(getnode_status $nodename)
+while [ $status = stopping ]; do
+
+  #Azure can take up to 15 mins to delete something
+  #Metal can take 30 mins
+  if [ $count -gt 60 ]; then
+    echo $nodename in state $status for too long, I will try to clean it up
+    break
+  fi
+  sleep 31
+  count=$(( $count + 1 ))
+  status=$(getnode_status $nodename)
+  if isOpenstack $nodename && [ $status = stopping ] ;then
+       echo "$nodename in state $status for too long (30 sec), I will try to clean it up"
+       break
+  fi
+  if isKVM $nodename && [ $status = stopping ] ;then
+       echo "$nodename in state $status for too long (30 sec), I will try to clean it up"
+       break
+  fi
+  
+  echo waiting for node $nodename to finish $status
+done
+fi
+
+OSOPTS='--insecure'
+shutdown_watchdog $nodename start
+echo node is $nodename
+if isAzure $nodename; then 
+   echo its an azure node 
+fi
+
+if isOpenStack $nodename || isMetal $nodename; then
+    os_login
+    echo  openstack ${OSOPTS} server delete ${nodename} && openstack ${OSOPTS} server delete ${nodename}
+    if [ $? -eq 1 ];then
+        echo delete of node $nodename failed for some reason
+    fi
+elif isAzure $nodename ;then
+    echo calling az_shutdown $nodename
+    az_shutdown $nodename
+    if [ $? -eq 1 ];then
+        echo delete of node $nodename failed for some reason
+    fi
+elif isKVM $nodename;then
+    echo calling kvm_shutdown $nodename
+    kvm_shutdown $nodename
+    if [ $? -eq 1 ];then
+        echo delete of node $nodename failed for some reason
+    fi
+fi
+
+echo nodename is $nodename
+
+#Now, the best place to clean up is on the master
+# The best place to add IPs is on the node, so thats a bit assymetic
+#in case its in the middle of the line
+if ! isMetal "$nodename"; then
+    sed -i "/ $nodename /d" /home/configs/hosts_headnode
+    #if its at the end of the line
+    sed -i "/ $nodename$/d" /home/configs/hosts_headnode
+    sed -i "/ $nodename /d" /home/configs/hosts_node
+    #if its at the end of the line
+    sed -i "/ $nodename$/d" /home/configs/hosts_node
+fi
+#I need to get the IP of the machine
+#I need to update the DNS (/etc/hosts on the master, at least thats fudged)
+#maybe the image can update its own - certainly easier like
+
+FORCEDOWN=1
+#new slurmctld, handles normal power down much better so no need for hacks
+# for out of band 'fast' shutdown, need to manually force state changes
+shutdown_watchdog $nodename end

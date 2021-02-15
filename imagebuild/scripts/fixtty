@@ -1,0 +1,6 @@
+#!/bin/bash
+/bin/rm -f /tmp/sshkey
+ssh-keygen -b 2048 -t rsa -f /tmp/sshkey -q -N ""; cat /tmp/sshkey.pub >> .ssh/authorized_keys;
+
+ssh -i /tmp/sshkey -oCheckHostIP=no -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -tt localhost "stty raw -echo; sudo sed -i -e /Defaults.*requiretty/s/^/#/" /etc/sudoers  < <(cat)
+/bin/rm -f /tmp/sshkey /tmp/sshkey.pub

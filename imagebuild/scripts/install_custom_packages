@@ -1,0 +1,96 @@
+#!/bin/bash
+INST='sudo yum -y install'
+#Dont actually need this on node images, but do on headnode
+#speed up deployment of headnode by pre-installing these
+$INST python-openstackclient nc openvpn easyrsa screen telnet
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
+$INST azure-cli
+#firewall-cmd  --add-service nfs --permanent
+#firewall-cmd  --add-service nfs 
+#firewall-cmd  --add-service rpc-bind --permanent
+#firewall-cmd  --add-service rpc-bind
+#$INST firewalld
+#systemctl disable firewalld
+#packer just sets this back anyway
+#sed  's/SELINUX=enforcing/SELINUX=disabled/' | sudo  tee /etc/sysconfig/selinux.tmp
+#sudo mv /etc/sysconfig/selinux.tmp /etc/sysconfig/selinux
+$INST beeond kernel-devel-$(uname -r) kernel-devel
+/etc/init.d/beegfs-client rebuild
+
+if ! [ -d /root/.ssh ]; then
+    sudo mkdir -p /root/.ssh
+fi
+ROOTTEMPLATE=/usr/lib/shc4hpc/roottemplate/ 
+#sudo ssh-keygen -t rsa -f $ROOTTEMPLATE/.ssh/beeondkey -N ""
+#TODO
+#yes thats good, different keys for each image but really for poc use the same one
+#use the same one
+
+sudo chmod 600 $ROOTTEMPLATE/.ssh/beeondkey
+sudo chown -R root: $ROOTTEMPLATE/
+cat << EOF | sudo tee $ROOTTEMPLATE/.ssh/config
+host * 
+   IdentityFile /root/.ssh/beeondkey
+#These systems ids and IPs are going to change
+host osk* azure* headnode* metal* login* kvm*
+   StrictHostKeyChecking no
+   UserKnownHostsFile /dev/null
+EOF
+if ! [ -d /etc/skel/.ssh ]; then
+   sudo mkdir -p /etc/skel/.ssh
+fi
+cat << EOF | sudo tee -a /etc/skel/.ssh/config
+#These systems ids and IPs are going to change
+host osk* azure* metal* headnode* login* kvm*
+   StrictHostKeyChecking no
+   UserKnownHostsFile /dev/null
+   IdentityFile /home/%u/.ssh/id_rsa
+EOF
+
+sudo mkdir /data
+#if [ -f /usr/bin/yum ]; then
+breed=$(osbreed)
+version=$(osversion)
+if [ $breed = el ] && [ $version = 7 ]; then
+sudo rpm --import /usr/lib/shc4hpc/misc/ceph-release.asc
+cat << EOF | sudo tee  /etc/yum.repos.d/ceph-luminous.repo
+[ceph]
+name=Ceph packages for 
+baseurl=http://download.ceph.com/rpm-luminous/el7/x86_64
+enabled=1
+priority=2
+gpgcheck=1
+type=rpm-md
+gpgkey=https://download.ceph.com/keys/release.asc
+
+[ceph-noarch]
+name=Ceph noarch packages
+baseurl=http://download.ceph.com/rpm-luminous/el7/noarch
+enabled=1
+priority=2
+gpgcheck=1
+type=rpm-md
+gpgkey=https://download.ceph.com/keys/release.asc
+
+[ceph-source]
+name=Ceph source packages
+baseurl=http://download.ceph.com/rpm-luminous/el7/SRPMS
+enabled=0
+priority=2
+gpgcheck=1
+type=rpm-md
+gpgkey=https://download.ceph.com/keys/release.asc
+
+EOF
+
+$INST ceph-release
+
+
+#Check if this is needed with new vm templates
+rpm -i ${SHC4HPCBASE/packages/el/7/packages-microsoft-prod.rpm
+$INST blobfuse fuse
+sudo mkdir /azure
+fi
+
+$INST openmpi openmpi-devel

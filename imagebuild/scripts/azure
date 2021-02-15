@@ -1,0 +1,12 @@
+#!/bin/sh
+
+sudo yum -y  install WALinuxAgent-2.2.18-1.el7
+#sudo yum -y localinstall /usr/lib/shc4hpc/packages/el/7/msft-rdma-drivers-4.2.4.1-20180512.x86_64.rpm	
+#this is openlogic waagent, which crashes by default if no rdma found.  **FOR POC** we want to run on cheap Azure instances, but use the openlogic VM as this is best for HPC in real life
+#for now hack around this, we will use he RDMA enabled instances for speed in reallife 
+#note, we still support RDMA instances if we wish to use them in the POC, this script merely causes waagent to also support standard instances
+#if [ -f /usr/lib/python2.7/site-packages/azurelinuxagent/pa/rdma/centos.py ]; then
+#   sudo /bin/mv /usr/lib/python2.7/site-packages/azurelinuxagent/pa/rdma/centos.py /usr/lib/shc4hpc/fixes/centos.py.old
+#   sudo /bin/cp /usr/lib/shc4hpc/fixes/centos.py /usr/lib/python2.7/site-packages/azurelinuxagent/pa/rdma/centos.py
+#fi
+

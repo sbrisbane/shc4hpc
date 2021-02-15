@@ -1,0 +1,567 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.1.3",
+    "parameters": {
+        "baseUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "Base URL for Marketplace",
+                "artifactsBaseUrl": ""
+            },
+            "defaultValue": "https://gallery.azure.com/artifact/20151001/beegfs.beegfs-ubuntu-freefree.1.0.0/Artifacts"
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "The region to deploy the resources into"
+            },
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "clustername": {
+            "type": "string",
+            "defaultValue": "beegfs-cluster"
+        },
+        "serverCount": {
+            "minValue": 1,
+            "maxValue": 250,
+            "defaultValue": 1,
+            "type": "int"
+        },
+        "metadataNodeCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Define the number of storage nodes that start metadata servers. "
+            }
+        },
+        "metadataNodesSeparated": {
+            "type": "string",
+            "defaultValue": "No",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ],
+            "metadata": {
+                "description": "Define if the metadata nodes should be separated servers to account for high metadata I/O loads."
+            }
+        },
+        "ServerNodeSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A6",
+                "Standard_A7",
+                "Standard_A8",
+                "Standard_A9",
+                "Standard_A10",
+                "Standard_A11",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14",
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_DS1",
+                "Standard_DS2",
+                "Standard_DS3",
+                "Standard_DS4",
+                "Standard_DS11",
+                "Standard_DS12",
+                "Standard_DS13",
+                "Standard_DS14",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2",
+                "Standard_F4",
+                "Standard_F8",
+                "Standard_F16",
+                "Standard_F4s",
+                "Standard_F8s",
+                "Standard_F16s",
+                "Standard_F2s_v2",
+                "Standard_F4s_v2",
+                "Standard_F8s_v2",
+                "Standard_F16s_v2",
+                "Standard_F32s_v2",
+                "Standard_F64s_v2",
+                "Standard_F72s_v2",
+                "Standard_G2",
+                "Standard_G3",
+                "Standard_G4",
+                "Standard_G5",
+                "Standard_GS1",
+                "Standard_GS2",
+                "Standard_GS3",
+                "Standard_GS4",
+                "Standard_GS5",
+                "Standard_L4s",
+                "Standard_L8s",
+                "Standard_L16s",
+                "Standard_L32s",
+                "Standard_M64s",
+                "Standard_M64ms",
+                "Standard_M128s",
+                "Standard_M128ms",
+                "Standard_E2_v3",
+                "Standard_E4_v3",
+                "Standard_E8_v3",
+                "Standard_E16_v3",
+                "Standard_E32_v3",
+                "Standard_E64_v3",
+                "Standard_E2s_v3",
+                "Standard_E4s_v3",
+                "Standard_E8s_v3",
+                "Standard_E16s_v3",
+                "Standard_E32s_v3",
+                "Standard_E64s_v3"
+            ],
+            "defaultValue": "Standard_DS4",
+            "metadata": {
+                "description": "Size of the  node."
+            }
+        },
+        "sizeOfDataDisksInGB": {
+            "type": "int",
+            "defaultValue": 128,
+            "metadata": {
+                "description": "Defines the size of each disk (premium storage sizes)"
+            }
+        },
+        "storageType": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_LRS",
+                "Premium_LRS"
+            ],
+            "defaultValue": "Premium_LRS",
+            "metadata": {
+                "description": "Storage Account Type"
+            }
+        },
+        "numDataDisksPerMachine": {
+            "type": "int",
+            "defaultValue": 2,
+            "minValue": 2,
+            "metadata": {
+                "description": "This parameter allows the user to select the number of disks they want"
+            }
+        },
+        "adminUserName": {
+            "type": "string",
+            "defaultValue": "username"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+        "clientCount": {
+            "minValue": 0,
+            "maxValue": 250,
+            "defaultValue": 0,
+            "type": "int"
+        },
+        "ClientNodeSize": {
+            "type": "string",
+            "allowedValues": [
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A6",
+                "Standard_A7",
+                "Standard_A8",
+                "Standard_A9",
+                "Standard_A10",
+                "Standard_A11",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14",
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_D5_v2",
+                "Standard_D12_v2",
+                "Standard_D13_v2",
+                "Standard_D14_v2",
+                "Standard_D15_v2",
+                "Standard_DS1",
+                "Standard_DS2",
+                "Standard_DS3",
+                "Standard_DS4",
+                "Standard_DS11",
+                "Standard_DS12",
+                "Standard_DS13",
+                "Standard_DS14",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS12_v2",
+                "Standard_DS13_v2",
+                "Standard_DS14_v2",
+                "Standard_DS15_v2",
+                "Standard_F4",
+                "Standard_F8",
+                "Standard_F16",
+                "Standard_F4s",
+                "Standard_F8s",
+                "Standard_F16s",
+                "Standard_F2s_v2",
+                "Standard_F4s_v2",
+                "Standard_F8s_v2",
+                "Standard_F16s_v2",
+                "Standard_F32s_v2",
+                "Standard_F64s_v2",
+                "Standard_F72s_v2",
+                "Standard_G2",
+                "Standard_G3",
+                "Standard_G4",
+                "Standard_G5",
+                "Standard_GS1",
+                "Standard_GS2",
+                "Standard_GS3",
+                "Standard_GS4",
+                "Standard_GS5",
+                "Standard_L4s",
+                "Standard_L8s",
+                "Standard_L16s",
+                "Standard_L32s",
+                "Standard_M64s",
+                "Standard_M64ms",
+                "Standard_M128s",
+                "Standard_M128ms",
+                "Standard_E2_v3",
+                "Standard_E4_v3",
+                "Standard_E8_v3",
+                "Standard_E16_v3",
+                "Standard_E32_v3",
+                "Standard_E64_v3",
+                "Standard_E2s_v3",
+                "Standard_E4s_v3",
+                "Standard_E8s_v3",
+                "Standard_E16s_v3",
+                "Standard_E32s_v3",
+                "Standard_E64s_v3"
+            ],
+            "defaultValue": "Standard_DS4",
+            "metadata": {
+                "description": "Size of the node."
+            }
+        }
+    },
+    "variables": {
+        "armApiVersion": "2017-08-01",
+        "sshKey": "no-key",
+        "authenticationType": "password",
+        "metadataNodeCountMerged": "[if(equals(parameters('metadataNodesSeparated'), 'Yes'), 0, parameters('metadataNodeCount'))]",
+        "ServerTemplate": "[concat(parameters('baseUrl'), '/EthernetServerRole.json')]",
+        "ClientTemplate": "[concat(parameters('baseUrl'), '/EthernetClientRole.json')]",
+        "networkSettings": {
+            "virtualNetworkName": "virtualnetwork",
+            "addressPrefix": "10.0.0.0/16",
+            "subnet": {
+                "dse": {
+                    "name": "dse",
+                    "prefix": "10.0.0.0/16",
+                    "vnet": "virtualnetwork"
+                }
+            }
+        },
+        "avSetNameServer": "[concat('avset-',uniqueString(resourceGroup().id), 'server') ]",
+        "avSetNameMetadataServer": "[concat('avset-',uniqueString(resourceGroup().id), 'mserver') ]",
+        "avSetNameClient": "[concat('avset-',uniqueString(resourceGroup().id), 'client') ]"
+    },
+    "resources": [
+        {
+            "apiVersion": "[variables('armApiVersion')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('networkSettings').virtualNetworkName]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('networkSettings').addressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('networkSettings').subnet.dse.name]",
+                        "properties": {
+                            "addressPrefix": "[variables('networkSettings').subnet.dse.prefix]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-12-01",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('avSetNameServer')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "platformUpdateDomainCount": 5,
+                "platformFaultDomainCount": 1
+            },
+            "sku": {
+                "name": "Aligned"
+            }
+        },
+        {
+            "apiVersion": "2017-12-01",
+            "condition": "[greater(parameters('clientCount'), 0)]",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('avSetNameClient')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "platformUpdateDomainCount": 5,
+                "platformFaultDomainCount": 1
+            },
+            "sku": {
+                "name": "Aligned"
+            }
+        },
+        {
+            "apiVersion": "2017-12-01",
+            "condition": "[equals(parameters('metadataNodesSeparated'), 'Yes')]",
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[variables('avSetNameMetadataServer')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "platformUpdateDomainCount": 5,
+                "platformFaultDomainCount": 1
+            },
+            "sku": {
+                "name": "Aligned"
+            }
+        },
+        {
+            "apiVersion": "[variables('armApiVersion')]",
+            "name": "[concat('beegfs-', 'server', '-vm-', copyIndex(1))]",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('networkSettings').virtualNetworkName]",
+                "[variables('avSetNameServer')]"
+            ],
+            "copy": {
+                "name": "serverloop",
+                "count": "[parameters('serverCount')]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('ServerTemplate')]",
+                    "contentVersion": "1.1.3"
+                },
+                "parameters": {
+                    "baseUrl": {
+                        "value": "[parameters('baseUrl')]"
+                    },
+                    "installationCLI": {
+                        "value": "[concat('sh setup_beegfs_server.sh /mnt/raid /mnt/parallel 10.0.2.1 ',copyIndex(1) ,' ', parameters('adminUserName') ,' ', parameters('adminPassword'),' ', variables('metadataNodeCountMerged'),' ', parameters('metadataNodesSeparated'),' false')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "roleType": {
+                        "value": "server"
+                    },
+                    "instanceNumber": {
+                        "value": "[copyIndex(1)]"
+                    },
+                    "adminUserName": {
+                        "value": "[parameters('adminUserName')]"
+                    },
+                    "imagePublisher": {
+                        "value": "Canonical"
+                    },
+                    "imageOffer": {
+                        "value": "UbuntuServer"
+                    },
+                    "imageSku": {
+                        "value": "16.04.0-LTS"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "mountFolder": {
+                        "value": "/data"
+                    },
+                    "nodeSize": {
+                        "value": "[parameters('ServerNodeSize')]"
+                    },
+                    "storageType": {
+                        "value": "[parameters('storageType')]"
+                    },
+                    "dataDiskSize": {
+                        "value": "[parameters('sizeOfDataDisksInGB')]"
+                    },
+                    "clustername": {
+                        "value": "[parameters('clustername')]"
+                    },
+                    "numDataDisks": {
+                        "value": "[parameters('numDataDisksPerMachine')]"
+                    },
+                    "sshPublicKey": {
+                        "value": "[variables('sshKey')]"
+                    },
+                    "authenticationType": {
+                        "value": "[variables('authenticationType')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "[variables('armApiVersion')]",
+            "condition": "[equals(parameters('metadataNodesSeparated'), 'Yes')]",
+            "name": "[concat('beegfs-', 'mserver', '-vm-', copyIndex(1))]",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('networkSettings').virtualNetworkName]",
+                "[variables('avSetNameMetadataServer')]"
+            ],
+            "copy": {
+                "name": "mserverloop",
+                "count": "[parameters('metadataNodeCount')]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('ServerTemplate')]",
+                    "contentVersion": "1.1.3"
+                },
+                "parameters": {
+                    "baseUrl": {
+                        "value": "[parameters('baseUrl')]"
+                    },
+                    "installationCLI": {
+                        "value": "[concat('sh setup_beegfs_server.sh /mnt/raid /mnt/parallel 10.0.2.1 ',copyIndex(1) ,' ', parameters('adminUserName') ,' ', parameters('adminPassword'),' ', parameters('metadataNodeCount'),' true true ')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "roleType": {
+                        "value": "mserver"
+                    },
+                    "instanceNumber": {
+                        "value": "[copyIndex(1)]"
+                    },
+                    "adminUserName": {
+                        "value": "[parameters('adminUserName')]"
+                    },
+                    "imagePublisher": {
+                        "value": "Canonical"
+                    },
+                    "imageOffer": {
+                        "value": "UbuntuServer"
+                    },
+                    "imageSku": {
+                        "value": "16.04.0-LTS"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "mountFolder": {
+                        "value": "/data"
+                    },
+                    "nodeSize": {
+                        "value": "[parameters('ServerNodeSize')]"
+                    },
+                    "storageType": {
+                        "value": "[parameters('storageType')]"
+                    },
+                    "dataDiskSize": {
+                        "value": "[parameters('sizeOfDataDisksInGB')]"
+                    },
+                    "clustername": {
+                        "value": "[parameters('clustername')]"
+                    },
+                    "numDataDisks": {
+                        "value": "[parameters('numDataDisksPerMachine')]"
+                    },
+                    "sshPublicKey": {
+                        "value": "[variables('sshKey')]"
+                    },
+                    "authenticationType": {
+                        "value": "[variables('authenticationType')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "[variables('armApiVersion')]",
+            "condition": "[greater(parameters('clientCount'), 0)]",
+            "name": "[concat('beegfs-', 'client', '-vm-', copyIndex(1))]",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[variables('networkSettings').virtualNetworkName]",
+                "[variables('avSetNameClient')]"
+            ],
+            "copy": {
+                "name": "clientloop",
+                "count": "[if(equals(parameters('clientCount'), 0), 1, parameters('clientCount'))]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('ClientTemplate')]",
+                    "contentVersion": "1.1.3"
+                },
+                "parameters": {
+                    "baseUrl": {
+                        "value": "[parameters('baseUrl')]"
+                    },
+                    "installationCLI": {
+                        "value": "[concat('sh setup_beegfs_client.sh /mnt/parallel 10.0.2.1 ' , parameters('adminUserName') ,' ', parameters('adminPassword'))]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "roleType": {
+                        "value": "client"
+                    },
+                    "instanceNumber": {
+                        "value": "[copyIndex(1)]"
+                    },
+                    "adminUserName": {
+                        "value": "[parameters('adminUserName')]"
+                    },
+                    "imagePublisher": {
+                        "value": "Canonical"
+                    },
+                    "imageOffer": {
+                        "value": "UbuntuServer"
+                    },
+                    "imageSku": {
+                        "value": "16.04.0-LTS"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "nodeSize": {
+                        "value": "[parameters('ClientNodeSize')]"
+                    },
+                    "storageType": {
+                        "value": "Standard_LRS"
+                    },
+                    "clustername": {
+                        "value": "[parameters('clustername')]"
+                    },
+                    "sshPublicKey": {
+                        "value": "[variables('sshKey')]"
+                    },
+                    "authenticationType": {
+                        "value": "[variables('authenticationType')]"
+                    }
+                }
+            }
+        }
+    ]
+}

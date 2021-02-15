@@ -1,0 +1,19 @@
+dell_node2rac ()
+{
+   DRACMAPS=${DRACMAPS:-/usr/lib/shc4hpc/etc/dell/idracmaps}
+   number=$(grep ^"${1}:" $DRACMAPS |  grep -v ^$ | grep -v ^$ | awk -F : '{ print $2 }' )
+   if [ $? -ne 0 ] ; then
+     error Slurm resume of $1 requires rac ip entered into $DRACMAPS
+     exit 1
+   fi
+   echo $number
+}
+dell_idrac_creds()
+{
+   usertest=$(grep ^"${1}:" $DRACMAPS | grep -v ^$ | grep -v ^$ | awk -F : '{ print $3 }' )
+   passtest=$(grep ^"${1}:" $DRACMAPS | grep -v ^$ | grep -v ^$ | awk -F : '{ print $4 }' )
+   user=${usertest:-root}
+   pass=${passtest:-calvin}
+   echo -u $user -p $pass
+}
+

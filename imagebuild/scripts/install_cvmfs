@@ -1,0 +1,12 @@
+#!/bin/bash
+#https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.6.3/cvmfs-2.6.3-1.sle12.x86_64.rpm
+sudo yum -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+yum --nogpgcheck -y install cvmfs cvmfs-config-default
+
+#sudo yum -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm
+
+echo "CVMFS_REPOSITORIES=atlas.cern.ch,atlas-condb.cern.ch,grid.cern.ch" >> /etc/cvmfs/default.local
+echo 'CVMFS_HTTP_PROXY="http://pplxsquid01.physics.ox.ac.uk:3128"' >> /etc/cvmfs/default.local
+
+systemctl enable autofs --now
+grep cvmfs /etc/auto.master || echo "/cvmfs /etc/auto.cvmfs" >> /etc/auto.master

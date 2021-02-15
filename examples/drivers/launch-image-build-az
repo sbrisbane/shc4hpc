@@ -1,0 +1,28 @@
+#!/bin/bash
+
+
+DIR=$(dirname $(realpath $0) )
+pwd=$PWD
+cd $DIR
+
+. environ
+
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+SHC4HPCSYSCONFIG="${SHC4HPCSYSCONFIG:-/etc/sysconfig/shc4hpc}"
+test -f $SHC4HPCSYSCONFIG && . $SHC4HPCSYSCONFIG
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+PACKERIO=$SHC4HPCBASE/bin/packer
+
+cd ../../imagebuild/files/anything
+tar czf ../anythingblob.tgz ./ 
+cd ../shc4hpc
+rsync -a $SHC4HPCSYSCONFIG/lib/ lib/
+tar czf ../shc4hpcblob.tgz ./ 
+cd ../userdefined
+tar czf ../userdefinedblob.tgz ./
+cd ../..
+${PACKERIO} build templates/az_centos_example.json
+cd $pwd

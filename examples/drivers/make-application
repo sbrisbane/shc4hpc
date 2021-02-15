@@ -1,0 +1,12 @@
+ az login --user "${AZ_USER}" --password $AZ_PASSWORD
+  az account set --subscription "${AZ_SUBSCRIPTION_ID}"
+  az group create -n "${AZ_RESOURCE_GROUP}" -l "${AZ_REGION}"
+
+  #not working - just set this up manually
+  #az group deployment validate --template-uri https://raw.githubusercontent.com/brisbane/azure-hpc/master/Compute-Grid-Infra/deploy-master.json -g "${AZ_RESOURCE_GROUP}" --mode Incremental --parameters /etc/securelinx_az_param.json
+  #az group deployment create --template-uri https://raw.githubusercontent.com/brisbane/azure-hpc/master/Compute-Grid-Infra/deploy-master.json -g "${AZ_RESOURCE_GROUP}" --mode Incremental --parameters /etc/securelinx_az_param.json
+  #sshKeyData="ssh-rsa AAB3NzaC1yc2EAAAADAQABAAABAQDBULlawRYy/nG1+D0CwOSTetHTdL6Uj0UkzaWR56C48djdi+5BOFXKcZB/9sKQg8ofFppIfkGsrc5F/VSWtv9lDgeBIm9pyhA6ke1lkLs/exeXw9IMbFMki/vJTXXxOYJTRuZZ3k2VpLGnjOdKNN0GkUwCOIWB1ucklhoSREmVo6oXixNHJxtBC8LDaUUfjoQ30N6QOmAhz09shWP691mR5gPr4AEZUmDe6Oyp57wTVdkY6g7+kn04ZRiqriC8NQwaxg8N+iLpdwSl1kw+O1Xwtz7g7hGguw3IUFyPQ2c3stgV572O4RMJAPiHsDwJ0BgfGSeAn0UphWMsMOD7VkI5" 
+
+  #needs an admin role in the above AZ_USER, to do this line.  Everything else can be done as contributor
+  az ad sp create-for-rbac --query "{ client_id: appId, client_secret: password, tenant_id: tenant }"
+

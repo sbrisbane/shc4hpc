@@ -1,0 +1,163 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pwd=$PWD
+cd $DIR
+
+. environ
+SHC4HPCSYSCONFIG="${SHC4HPCSYSCONFIG:-/etc/sysconfig/shc4hpc}"
+
+
+
+# Take one argument from the commandline: VM name
+NODENAME=master
+# Check if domain already exists
+virsh dominfo ${NODENAME} > /dev/null 2>&1
+if [ "$?" -eq 0 ]; then
+    echo -n "[WARNING] ${NODENAME} already exists.  "
+    read -p "Do you want to overwrite ${NODENAME} [y/N]? " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+    else
+        echo -e "\nNot overwriting ${NODENAME}. Exiting..."
+        exit 1
+    fi
+fi
+
+# Directory to store images
+IMAGEDIR=~/virt/images
+
+# Location of cloud image
+IMAGE=$IMAGEDIR/CentOS-7-x86_64-GenericCloud.qcow2
+
+# Amount of RAM in MB
+MEM=1024
+
+# Number of virtual CPUs
+CPUS=1
+
+
+
+META_DATA=meta-data
+CI_ISO=${NODENAME}-cidata.iso
+DISK=${NODENAME}.qcow2
+
+# Bridge for VMs (default on Fedora is virbr0)
+KVM_BRIDGE=virbr0
+
+# Start clean
+rm -rf $IMAGEDIR/${NODENAME}
+mkdir -p $IMAGEDIR/${NODENAME}
+
+pushd $IMAGEDIR/${NODENAME} > /dev/null
+
+    # Create log file
+    touch ${NODENAME}.log
+
+    echo "$(date -R) Destroying the ${NODENAME} domain (if it exists)..."
+    # Remove domain with the same name
+    virsh destroy ${NODENAME} >> $NODNENAME.log 2>&1
+    virsh undefine ${NODENAME} >> ${NODENAME}.log 2>&1
+
+# Cloud init files
+USERDATABASE=$DIR/../userdata/${NODENAME}-laptop
+USERDATA=/tmp/${NODENAME}config
+USER_DATA=user-data
+
+
+test=0
+if [ $test -eq 1 ]; then
+    # cloud-init config: set hostname, remove cloud-init package,
+    # and add ssh-key 
+    cat > $USER_DATA << _EOF_
+#cloud-config
+
+
+# Remove cloud-init when finished with it
+runcmd:
+  - [ yum, -y, remove, cloud-init ]
+  - [ yum, -y, install, libvirt-client, virt-install ]
+  - [ ssh-keygen, -f, /root/.ssh/kvm_key,  -P, "" ]
+  - [ echo, store, ssh, key, /root/.ssh/kvm_key, in, kvm, host, >>, /root/.bash_profile ]
+
+# Configure where output will go
+output: 
+  all: ">> /var/log/cloud-init.log"
+_EOF_
+else
+
+    cp $USERDATABASE $USERDATA
+fi
+
+
+cat >> $USERDATA << _EOF_
+# configure interaction with ssh server
+ssh_svcname: ssh
+ssh_deletekeys: True
+ssh_genkeytypes: ['rsa', 'ecdsa']
+master_is_vpn_client: 1
+
+# Hostname management
+preserve_hostname: False
+
+
+# Install my public ssh key to the first user-defined user configured 
+# in cloud.cfg in the template (which is centos for CentOS cloud images)
+ssh_authorized_keys:
+  - $(cat ~/.ssh/id_rsa.pub)
+
+_EOF_
+
+    echo "instance-id: ${NODENAME}; local-hostname: ${NODENAME}" > $META_DATA
+    cp $USERDATA $USER_DATA
+    echo "$(date -R) Copying template image..."
+    cp $IMAGE $DISK
+
+    # Create CD-ROM ISO with cloud-init config
+    echo "$(date -R) Generating ISO for cloud-init..."
+    echo genisoimage -output $CI_ISO -volid cidata -joliet -r $USER_DATA $META_DATA  &>> ${NODENAME}.log
+    genisoimage -output $CI_ISO -volid cidata -joliet -r $USER_DATA $META_DATA &>> ${NODENAME}.log
+
+    echo "$(date -R) Installing the domain and adjusting the configuration..."
+    echo "[INFO] Installing with the following parameters:"
+    echo "virt-install --import --name ${NODENAME} --ram $MEM --vcpus $CPUS --disk
+    $DISK,format=qcow2,bus=virtio --disk $CI_ISO,device=cdrom --network
+    bridge=${KVM_BRIDGE},model=virtio --os-type=linux --os-variant=rhel6 --noautoconsole"
+
+    virt-install --import --name ${NODENAME} --ram $MEM --vcpus $CPUS --disk \
+    $DISK,format=qcow2,bus=virtio --disk $CI_ISO,device=cdrom --network \
+    bridge=${KVM_BRIDGE},model=virtio --os-type=linux --os-variant=rhel6 --noautoconsole
+
+    MAC=$(virsh dumpxml ${NODENAME} | awk -F\' '/mac address/ {print $2}')
+    while true
+    do
+        IP=$(grep -B1 $MAC /var/lib/libvirt/dnsmasq/${KVM_BRIDGE}.status | head \
+             -n 1 | awk '{print $2}' | sed -e s/\"//g -e s/,//)
+        if [ "$IP" = "" ]
+        then
+            sleep 1
+        else
+            break
+        fi
+    done
+
+    # Eject cdrom
+    echo "$(date -R). SSH to ${NODENAME} using $IP, with  username 'centos'."
+    echo ssh centos@${IP}
+    sleep 100
+    echo adding key
+    while ! ssh centos@${IP} sudo cat /root/.ssh/kvm_key.pub ; do 
+	    sleep 10
+    done
+    ssh centos@${IP} sudo cat /root/.ssh/kvm_key.pub >> $HOME/.ssh/authorized_keys
+    echo "$(date -R) Cleaning up cloud-init..."
+
+    virsh change-media ${NODENAME} hda --eject --config >> ${NODENAME}.log
+    sleep 40
+    # Remove the unnecessary cloud init files
+    
+    rm $USER_DATA 
+    rm $CI_ISO
+
+    echo "$(date -R) DONE. SSH to ${NODENAME} using $IP, with  username 'centos'."
+
+popd > /dev/null

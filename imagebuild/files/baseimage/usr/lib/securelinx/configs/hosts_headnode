@@ -1,0 +1,15 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+10.0.0.136 login01 login01.openstack.local 
+10.0.0.140 headnode1 headnode1.openstack.local
+192.168.126.150 metal1
+192.168.126.153 metal2
+192.168.126.156 metal3
+192.168.126.157 metal4
+
+
+10.226.0.10 azure3  
+10.226.0.6 azure4  
+10.226.0.9 azure1  
+10.226.0.11 azure2  

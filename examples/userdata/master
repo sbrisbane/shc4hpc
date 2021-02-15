@@ -1,0 +1,37 @@
+#cloud-config
+timezone: Europe/Dublin
+hostname: headnode1
+nodename: headnode1
+fqdn: headnode1.hpc.poc
+runcmd:
+ - [ /usr/sbin/slurm_instance.sh ] 
+master: yes
+disable_root: false
+os_goldenimage: pocv1_0
+os_auth_url: "https://osmgmt.rcsi.poc:5000/v3/"
+os_project_id: "cb58c1fbb29d4704bafb6005b2af269d"
+os_project_name: "shared_services"
+os_net_id: "shared_services"
+ironic_net_id: "ironic"
+metal_goldenimage: "pocv1_0"
+os_user_domain_name: "Default"
+os_username: "admin"
+os_password: "crowbar"
+os_region_name: "RegionOne"
+az_image_rg: "PoCRG"
+os_subnet: "10.0.0.0/24"
+az_vpn_server: "52.166.254.166"
+az_subnet: "10.226.0.0/16"
+vpn_subnet: "10.8.0.0/24"
+os_az_router: "10.10.10.103"
+az_vpn_server_internal: "10.0.3.6"
+az_os_router: "10.0.3.6"
+az_resource_group: PoCHPC
+az_app_id: "9f5ce0dc-4c86-4fb9-9552-29fee96edd56"
+az_secret: "1bc6bcec-ebf4-4e99-814b-70ba566a7f5b"
+az_tenant_id: "ea9318de-cc35-4291-85c4-b25774427dcf"
+az_subscription_id: "af737120-b16e-46a7-8c9e-6efd9ebb7fad"
+az_goldenimage: "pocv1_0"
+nfsmaster: "192.168.126.140"
+ntpserver: "192.168.126.140"
+ssh_key: "AAAAB3NzaC1yc2EAAAADAQABAAABAQDmM74tqeV9HNoThPgTObJznemI43ErnkbLXhFd8XElvKGzY0gAofKLkKTeDQJ4wWJpANpe+hGj6m/nUhkofnoo1dikD//r4N9orTqkaX+C269Hivht9fJ5bDM485N6cXGNzZiby6VtuFdg2rNnz6nKTXoDLhUHGho+7ZkjSZznaW7WbjcgtU6xYqJj+q+3YSC7JI8pQOZFvROALiqVvy9IpKP5Wy8goOs14ssFMP47s8mop2iebOP3pc1WIMZPemJdC6KFRBBHHkcnK5dymxiPAZ7HmklbHbdJXueHfHB8tbU28n5WubwR7SUL8VmSh4K3LHeS0nK036FSr6r1wIWB"

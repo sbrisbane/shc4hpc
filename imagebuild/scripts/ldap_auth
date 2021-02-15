@@ -1,0 +1,10 @@
+#!/bin/bash
+if [[ -x /usr/bin/zypper ]]; then
+	sudo zypper -n install realmd adcli sssd sssd-tools sssd-ad samba-client
+	#sudo zypper -n install NetworkManager
+elif [[ -x /usr/bin/yum ]]; then
+	sudo yum -y install adcli oddjob oddjob-mkhomedir realmd sssd krb5-workstation krb5-libs samba-common-tools 
+fi
+
+exit 0
+

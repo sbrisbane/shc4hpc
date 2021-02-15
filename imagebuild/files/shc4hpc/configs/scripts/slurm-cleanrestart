@@ -1,0 +1,7 @@
+for i in $(pbsnodes | grep "^[osk|azure|metal]" | grep -v headnode); do  node_shutdown $i& done
+service slurmctld stop
+killall slurmctld
+cp /home/configs/hosts_hnbase /home/configs/hosts_headnode
+cp /home/configs/hosts_base /home/configs/hosts_node
+rm -f /var/lib/shc4hpc/targetstates.db
+slurmctld -c

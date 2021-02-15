@@ -1,0 +1,52 @@
+#!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+PACKERKEY=PackerKey
+METAL_IMAGE=$(get_config metal_goldenimage)
+NOVAOPTS='--insecure'
+OPOPTS="$NOVAOPTS"
+NETID=$(get_config ironic_net_id) 
+nodename=$1
+IP=$(node_to_floating_ip $1)
+
+function metal_get_kernel()
+{
+   baseimage=$1
+   echo bm-centos7-kernel
+}
+function metal_get_initrd ()
+{
+   baseimage=$1
+   echo bm-centos7-initrd
+}
+kernel=$(metal_get_kernel $METAL_IMAGE)
+inirrd=$(metal_get_initrd $METAL_IMAGE)
+
+if [[ $2 ]]; then
+  LAUNCHCONFIG=$2
+fi
+
+BMFLAV=bare_metal
+
+echo openstack ${OSOPTS} server create --image ${METAL_IMAGE}  --flavor $BMFLAV --key-name ${PACKERKEY} --nic net-id="${NETID}" ${nodename} --user-data="${LAUNCHCONFIG}" 
+
+openstack ${OSOPTS} server create --image ${METAL_IMAGE}  --flavor $BMFLAV --key-name ${PACKERKEY} --nic net-id="${NETID}" ${nodename} --user-data="${LAUNCHCONFIG}" 
+res=$?
+if [ $res -ne 0 ]; then
+  exit $res
+fi
+echo openstack ${OSOPTS} server add floating ip "$nodename" "${FLOATINGIP}"
+openstack ${OSOPTS} server add floating ip "$nodename" "${IP}"
+res=$?
+count=0
+while [ $res -ne 0 ] && [ $count -lt 100 ]; do
+   echo openstack ${OSOPTS} server add floating ip "$nodename" "${IP}"
+   openstack ${OSOPTS} server add floating ip "$nodename" "${IP}"
+   res=$?
+   sleep 20
+   count=$(( $count + 1 ))
+done
+exit $res
+#nova boot ${NOVAOPTS} --flavor "${IRONICFLAV}" --image ${METAL_IMAGE} --key-name  ${PACKERKEY}  --user-data=${LAUNCHCONFIG}

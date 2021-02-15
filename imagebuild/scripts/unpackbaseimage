@@ -1,0 +1,10 @@
+#!/bin/bash
+cd /
+#force ownership to root though
+sudo tar -tzf /tmp/baseimageblob.tgz
+mkdir /tmp/unpack
+sudo tar -xzf /tmp/baseimageblob.tgz -C /tmp/unpack
+sudo chown root:root /tmp/unpack -R
+sudo chmod g-w /tmp/unpack -R
+cd /tmp/unpack
+sudo rsync -a ./ /

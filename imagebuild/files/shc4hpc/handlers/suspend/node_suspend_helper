@@ -1,0 +1,25 @@
+#!/bin/bash
+#get environment settings
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
+
+
+
+node=$1
+nodetype=$(nodetype $node)
+[ -f $SHC4HPCBASE/handlers/suspend/$nodetype/pre ] && $SHC4HPCBASE/handlers/suspend/$nodetype/pre $node
+
+SSHID=${SSHID:-none}
+
+ssh  -o ConnectTimeout=10 -o PasswordAuthentication=no -i $SSHID root@"$node" /usr/sbin/shutdown -P now 
+res=$?
+if [ $res -ne 0 ] ; then
+   info "No ssh connection to node $node was possible"
+   [ -f $SHC4HPCBASE/handlers/suspend/$nodetype/failconnect ] && $SHC4HPCBASE/handlers/suspend/$nodetype/failconnect $node
+fi
+
+[ -f $SHC4HPCBASE/handlers/suspend/$nodetype/post ] && $SHC4HPCBASE/handlers/suspend/$nodetype/post $node

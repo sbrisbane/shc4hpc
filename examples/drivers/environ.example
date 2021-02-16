@@ -30,4 +30,9 @@ export AZ_HEADNODE_IPNAME=headnode1-ip
 
 
 
+export AZ_VM_TEMPLATE=azvmtemplate-azures.json
+
+
+export AWS_ACCESS_KEY_ID="anaccesskey"
+export AWS_DEFAULT_REGION="us-west-2"
 

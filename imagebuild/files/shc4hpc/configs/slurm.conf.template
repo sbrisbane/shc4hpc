@@ -10,6 +10,9 @@ SlurmctldPidFile=/var/run/slurmctld.pid
 SlurmctldPort=6817
 SlurmdPidFile=/var/run/slurmd.pid
 SlurmdPort=6818
+SlurmdParameters=config_overrides
+#vital for cloud on demand
+SlurmctldParameters=enable_configless,idle_on_node_suspend
 SlurmdSpoolDir=/var/spool/slurm/d
 SlurmUser=root
 StateSaveLocation=/var/spool/slurm/ctld
@@ -20,7 +23,6 @@ KillWait=30
 MinJobAge=300
 SlurmctldTimeout=120
 Waittime=0
-FastSchedule=2
 SchedulerType=sched/backfill
 SelectType=select/linear
 AccountingStoreJobComment=YES
@@ -35,8 +37,10 @@ AccountingStorageTRES=Mem,Node,CPU,Billing
 JobCompLoc=/var/log/slurm/job_completions
 
 
-SuspendProgram=/usr/bin/slurm_suspend
-ResumeProgram=/usr/bin/slurm_resume
+SuspendProgram=/usr/lib/shc4hpc/handlers/suspend/node_suspend
+ResumeProgram=/usr/lib/shc4hpc/handlers/resume/node_resume
+ResumeFailProgram=/usr/lib/shc4hpc/handlers/recovery/node_recovery
+
 #To reschedule jobs that are allocated to nodes that fail to resume (eg quotas)
 ## Make sure SlurmdTimeout (job requeue time aver resume sent) s is less than 
 #SuspendTime (idle nodes marked for power saving) but (for rhobustness) greater than 

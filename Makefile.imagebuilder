@@ -20,7 +20,9 @@ sysconfig: .build/sysconfig
 shc4hpcsysconfig: .build/sysconfig/shc4hpc
 
 imagebuild/files/userdefined/secrets/generated/etc/munge.key:
+	mkdir -m 0700 -p imagebuild/files/userdefined/secrets/generated/etc/
 	sh -c "dd if=/dev/urandom bs=1 count=1024 > $@"
+	chmod 600 $@
 
 munge.key: imagebuild/files/userdefined/secrets/generated/etc/munge.key
 
@@ -41,6 +43,7 @@ packer:	thirdparty/packer
 environ.secret: examples/drivers/environ.secret
 packer: thirdparty/packer
 
+
 install: all
 	install -m 644  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
 	mkdir -m 755 -p ${SHC4HPCBASE}/bin
@@ -48,6 +51,7 @@ install: all
 	${RECURSECP} imagebuild/ ${SHC4HPCBASE}/imagebuild/ 
 	${RECURSECP} lib/ ${SHC4HPCBASE}/lib/ 
 	${RECURSECP} lib/ ${SHC4HPCBASE}/imagebuild/files/shc4hpc/lib/ 
+	${RECURSECP} etc/ ${SHC4HPCBASE}/etc/ 
 	${RECURSECP} examples/ ${SHC4HPCBASE}/examples/
 
 	

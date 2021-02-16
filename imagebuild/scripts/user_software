@@ -1,8 +1,11 @@
 #!/bin/sh
 #install  any research software in this script 
 if [[ -x /usr/bin/yum ]]; then
-    sudo yum -y install bzip2-devel gcc-c++ libX11-devel libXt-devel libcurl-devel xz-devel  openmpi openmpi-devel
+    sudo yum -y install bzip2-devel gcc-c++ libX11-devel libXt-devel libcurl-devel xz-devel  
+#needs to behandled caefully as images now might have mellanox
+rpm -qa | grep MLNX
+#openmpi openmpi-devel
 elif [[ -x /usr/bin/zypper ]] ;then
     sudo zypper -n --non-interactive install -y gcc libffi-devel python-devel openssl-devel python2-pip
 fi
-
+exit 0

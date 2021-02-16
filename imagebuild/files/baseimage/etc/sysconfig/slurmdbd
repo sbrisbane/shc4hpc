@@ -1,6 +1,1 @@
-SLURMDIR=/home/software/slurm/latest 
-PATH=$SLURMDIR/bin:$SLURMDIR/sbin:$PATH
-LD_LIBRARY_PATH=$SLURMDIR/lib:$LD_LIBRARY_PATH
-SLURMCONFIGDIR=/home/software/slurm/configs/etc
-SLURM_CONF=/home/software/slurm/configs/etc/slurmdbd.conf
 

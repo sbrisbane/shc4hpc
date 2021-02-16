@@ -1,12 +1,13 @@
 #!/bin/bash
 
-
 DIR=$(dirname $(realpath $0) )
 pwd=$PWD
 cd $DIR
 
 . environ
-
+#export PACKER_LOG=1
+#DEBUG="-debug -on-error=ask"
+DEBUG="-on-error=ask"
 SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
 SHC4HPCSYSCONFIG="${SHC4HPCSYSCONFIG:-/etc/sysconfig/shc4hpc}"
 test -f $SHC4HPCSYSCONFIG && . $SHC4HPCSYSCONFIG
@@ -25,5 +26,6 @@ cd ../userdefined
 tar czf ../userdefinedblob.tgz ./
 cd ../..
 echo $AZ_IMAGE_RG
-${PACKERIO} build templates/az_centos_example2.json
+
+${PACKERIO} build $DEBUG templates/az_centos_example.json
 cd $pwd

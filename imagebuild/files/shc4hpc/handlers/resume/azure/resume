@@ -22,13 +22,13 @@ LDAP_REALM=$(get_config ldap_realm)
 
 #Included here for convenience, now got seperately by used in az_login function 
 #AZ_APP_ID=$(get_config az_app_id)
-#AZ_SECRET=$(get_config az_secret)
+#AZ_APP_SECRET=$(get_config az_app_secret)
 #AZ_TENANT_ID=$(get_config az_tenant_id)
 #AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
 
 #AZ_SUBSCRIPTION_ID=4888d506-7dbf-4616-b8f3-22c80026fba2
 #AZ_APP_ID="5960eff4-3055-4851-a24e-1f8c9359ede1"
-#AZ_SECRET="193a6baa-309d-436e-a57e-9b9a9c5c70e1"
+#AZ_APP_SECRET="193a6baa-309d-436e-a57e-9b9a9c5c70e1"
 #AZ_TENANT_ID="c7d87009-ad59-430b-87a3-c4fa4b981a8e"
 #AZ_GOLDENIMAGE="/subscriptions/4888d506-7dbf-4116-b8f3-22c80026fbd2/resourceGroups/rgSHC4HPC/providers/Microsoft.Compute/images/shc4hpcimagename"
 #AZ_RESOURCE_GROUP=sbVPNRg

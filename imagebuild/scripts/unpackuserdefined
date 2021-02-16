@@ -2,7 +2,7 @@
 cd /
 #force ownership to root though
 sudo tar -tzf /tmp/userdefinedblob.tgz
-mkdir -m 700 /tmp/unpack2
+mkdir -m 755 /tmp/unpack2
 sudo tar -xzf /tmp/userdefinedblob.tgz -C /tmp/unpack2
 sudo chown root:root /tmp/unpack2 -R
 sudo chmod g-w /tmp/unpack2 -R
@@ -16,6 +16,11 @@ cd ../..
 cd  public/generated
 sudo rsync -a ./ /
 cd ../..
-cd  public/secrets
+cd  public/manual
 sudo rsync -a ./ /
 cd ../..
+
+#chmod 1777 /tmp
+cat $0
+cd
+exit 0

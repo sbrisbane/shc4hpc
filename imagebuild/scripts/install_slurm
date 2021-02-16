@@ -5,11 +5,14 @@ if [[ -x /usr/bin/yum ]]; then
 	SLURMVERSION=20.11.3
 	whoami | sudo tee /root/packeruser
 	$INST epel-release
-	
+        #hack around broke epel on azure? 
+        sudo sed -i 's/\#baseurl/baseurl/' /etc/yum.repos.d/epel.repo	
+        sudo sed -i 's/metalink/#metalink/' /etc/yum.repos.d/epel.repo	
+
 	$INST  mariadb-server mariadb-devel libssh2 libssh2-devel
 	$INST munge munge-libs munge-devel 
 	$INST openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad 
-	$INST rpm-build perl-ExtUtils-MakeMaker gcc
+	$INST rpm-build perl-ExtUtils-MakeMaker gcc python3
 	#Dont uncomment this unless you know what you are doing - this is once per cluster
 	#$INST rng-tools
 	#rngd -r /dev/urandom
@@ -17,21 +20,23 @@ if [[ -x /usr/bin/yum ]]; then
 	
 	cd $HOME
 	#We might already have sources available, somehow
-	if [ -f /tmp/slurmrpms.tgz ]; then
-	   tar xf /tmp/slurmrpms.tgz -C $HOME
+	if [ -f /var/shc4hpc/slurmrpms.tgz ]; then
+	   tar xf /var/shc4hpc/slurmrpms.tgz -C $HOME
 	fi
-	if ! [ -f $HOME/rpmbuild/RPMS/x86_64/slurm-slurmd-${SLURMVERSION}-1.el7.centos.x86_64.rpm ]; then
+	if ! [ -f $HOME/rpmbuild/RPMS/x86_64/slurm-slurmd-${SLURMVERSION}-1.el7.x86_64.rpm ]; then
 	   mkdir -p rpmbuild/SOURCES
 	   cd rpmbuild/SOURCES/
 	   /usr/bin/wget https://download.schedmd.com/slurm/slurm-${SLURMVERSION}.tar.bz2
 	
 	   rpmbuild -ta slurm-${SLURMVERSION}.tar.bz2
 	fi
-	
+	SLSUF="-1"
+        SLURMVERSION=${SLURMVERSION}${SLSUF}
 	cd $HOME/rpmbuild/RPMS/x86_64
 	
-	$LOCALINST slurm-slurmd-${SLURMVERSION}.el7.x86_64.rpm slurm-${SLURMVERSION}.el7.x86_64.rpm slurm-devel-${SLURMVERSION}.el7.x86_64.rpm slurm-munge-${SLURMVERSION}.el7.x86_64.rpm slurm-contribs-${SLURMVERSION}.el7.x86_64.rpm slurm-perlapi-${SLURMVERSION}.el7.x86_64.rpm slurm-torque-${SLURMVERSION}.el7.x86_64.rpm slurm-slurmctld-${SLURMVERSION}.el7.x86_64.rpm  slurm-slurmdbd-${SLURMVERSION}.el7.x86_64.rpm slurm-example-configs-${SLURMVERSION}.el7.x86_64.rpm
+	$LOCALINST slurm-slurmd-${SLURMVERSION}.el7.x86_64.rpm slurm-${SLURMVERSION}.el7.x86_64.rpm slurm-devel-${SLURMVERSION}.el7.x86_64.rpm slurm-contribs-${SLURMVERSION}.el7.x86_64.rpm slurm-perlapi-${SLURMVERSION}.el7.x86_64.rpm slurm-torque-${SLURMVERSION}.el7.x86_64.rpm slurm-slurmctld-${SLURMVERSION}.el7.x86_64.rpm  slurm-slurmdbd-${SLURMVERSION}.el7.x86_64.rpm slurm-example-configs-${SLURMVERSION}.el7.x86_64.rpm
 	#Where are these slurm-plugins slurm-munge? 
+        #slurm-munge-${SLURMVERSION}.el7.x86_64.rpm
 
 	#RHEL Specific Config
 	sudo mv /etc/slurm/cgroup.conf.example   /etc/slurm/cgroup.conf
@@ -48,7 +53,12 @@ else
 fi
 
 
-sudo mv /tmp/munge.key /etc/munge/
+sudo test -f /etc/munge/munge.key
+if [ $? -ne 0 ]; then
+  sudo mkdir -m 0700 -p /etc/munge/
+  sudo mv /tmp/munge.key /etc/munge/
+fi
+
 sudo mv /tmp/slurm_instance.sh /usr/sbin
 sudo chmod 755 /usr/sbin/slurm_instance.sh
 sudo chown root:root /usr/sbin/slurm_instance.sh
@@ -62,7 +72,13 @@ sudo mkdir -p /var/spool/slurm/
 sudo chmod 755 /var/spool/slurm
 
 #TODO may not be needed?
-
+#cd /etc/yum.repos.d
+#for i in *; do
+#echo "#################################"
+#echo "########${i}####################" 
+#cat $i
+#echo "#################################"
+#done
 
 sudo mkdir -p  /var/spool/slurmctld
 #sudo chown slurm: /var/spool/slurmctld

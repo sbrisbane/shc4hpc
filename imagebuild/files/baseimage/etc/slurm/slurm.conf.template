@@ -1,17 +1,18 @@
 #FOR DEBUG, examples
 DebugFlags=NodeFeatures,NO_CONF_HASH,Power
-#ControlAddr=10.10.10.103
-#NodeName=headnode
 ClusterName=local
 AuthType=auth/munge
 CryptoType=crypto/munge
 MpiDefault=none
 ProctrackType=proctrack/cgroup
 ReturnToService=2
-SlurmctldPidFile=/var/run/slurm/slurmctld.pid
+SlurmctldPidFile=/var/run/slurmctld.pid
 SlurmctldPort=6817
-SlurmdPidFile=/var/run/slurm/slurmd.pid
+SlurmdPidFile=/var/run/slurmd.pid
 SlurmdPort=6818
+SlurmdParameters=config_overrides
+#vital for cloud on demand
+SlurmctldParameters=enable_configless,idle_on_node_suspend
 SlurmdSpoolDir=/var/spool/slurm/d
 SlurmUser=root
 StateSaveLocation=/var/spool/slurm/ctld
@@ -22,7 +23,6 @@ KillWait=30
 MinJobAge=300
 SlurmctldTimeout=120
 Waittime=0
-FastSchedule=2
 SchedulerType=sched/backfill
 SelectType=select/linear
 AccountingStoreJobComment=YES
@@ -37,8 +37,10 @@ AccountingStorageTRES=Mem,Node,CPU,Billing
 JobCompLoc=/var/log/slurm/job_completions
 
 
-SuspendProgram=/usr/bin/slurm_suspend
-ResumeProgram=/usr/bin/slurm_resume
+SuspendProgram=/usr/lib/shc4hpc/handlers/suspend/node_suspend
+ResumeProgram=/usr/lib/shc4hpc/handlers/resume/node_resume
+ResumeFailProgram=/usr/lib/shc4hpc/handlers/recovery/node_recovery
+
 #To reschedule jobs that are allocated to nodes that fail to resume (eg quotas)
 ## Make sure SlurmdTimeout (job requeue time aver resume sent) s is less than 
 #SuspendTime (idle nodes marked for power saving) but (for rhobustness) greater than 
@@ -77,11 +79,9 @@ SlurmSchedLogFile=/var/log/slurmshed.log
 #NodeName=kvm[1-2] CPUs=1 State=CLOUD Feature=CLOUD
 #NodeName=osk[1-3] CPUs=1 State=CLOUD Feature=CLOUD
 NodeName=azure[1-10] CPUs=1 State=CLOUD Feature=CLOUD
-NodeName=trad1 CPUs=1 State=UNKNOWN
 #NodeName=metal1 Sockets=2 CoresPerSocket=14 ThreadsPerCore=2 State=CLOUD Feature=CLOUD
 #PartitionName=openstack Nodes=osk[1-3] Default=YES MaxTime=INFINITE State=UP
 PartitionName=azure Nodes=azure[1-4] Default=NO MaxTime=INFINITE State=UP
-PartitionName=defaultq Nodes=trad1 Default=YES MaxTime=INFINITE State=UP
 #PartitionName=azures Nodes=azure[5-7] Default=NO MaxTime=INFINITE State=UP
 #PartitionName=metal Nodes=metal1 Default=NO MaxTime=INFINITE State=UP
 #PartitionName=kvm   Nodes=kvm[1-2]  Default=NO MaxTime=INFINITE State=UP

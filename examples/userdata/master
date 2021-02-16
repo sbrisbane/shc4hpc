@@ -28,7 +28,7 @@ az_vpn_server_internal: "10.0.3.6"
 az_os_router: "10.0.3.6"
 az_resource_group: PoCHPC
 az_app_id: "9f5ce0dc-4c86-4fb9-9552-29fee96edd56"
-az_secret: "1bc6bcec-ebf4-4e99-814b-70ba566a7f5b"
+az_secret: "changeme"
 az_tenant_id: "ea9318de-cc35-4291-85c4-b25774427dcf"
 az_subscription_id: "af737120-b16e-46a7-8c9e-6efd9ebb7fad"
 az_goldenimage: "pocv1_0"

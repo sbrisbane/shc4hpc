@@ -16,11 +16,39 @@ $INST azure-cli
 #sed  's/SELINUX=enforcing/SELINUX=disabled/' | sudo  tee /etc/sysconfig/selinux.tmp
 #sudo mv /etc/sysconfig/selinux.tmp /etc/sysconfig/selinux
 $INST beeond kernel-devel-$(uname -r) kernel-devel
-/etc/init.d/beegfs-client rebuild
+sudo /etc/init.d/beegfs-client rebuild
 
 if ! [ -d /root/.ssh ]; then
     sudo mkdir -p /root/.ssh
 fi
+
+function osbreed () {
+   if [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] ; then
+      echo el
+   elif [ -f /etc/SuSE-release  ]; then
+      echo sles
+   fi
+
+}
+function osversion (){
+   breed=$(osbreed)
+   if [ $breed = el ] && [ -f /etc/centos-release ]; then
+      grep -qi "release 6" /etc/centos-release && echo 6 && return 0
+      grep -qi "release 7" /etc/centos-release && echo 7 && return 0
+      grep -qi "release 8" /etc/centos-release && echo 8 && return 0
+   elif [ $breed = el ] && [ -f /etc/redhat-release ]; then
+      grep -qi "release 6" /etc/redhat-release && echo 6 && return 0
+      grep -qi "release 7" /etc/redhat-release && echo 7 && return 0
+      grep -qi "release 8" /etc/redhat-release && echo 8 && return 0
+   elif [ $breed = sles ] && [ -f /etc/SuSE-release ]; then
+       grep "VERSION =" /etc/SuSE-release | cut cut -f 2 -d =    && return 0
+   fi
+   echo unknown
+   return 1
+
+}
+
+
 ROOTTEMPLATE=/usr/lib/shc4hpc/roottemplate/ 
 #sudo ssh-keygen -t rsa -f $ROOTTEMPLATE/.ssh/beeondkey -N ""
 #TODO
@@ -84,13 +112,17 @@ gpgkey=https://download.ceph.com/keys/release.asc
 
 EOF
 
-$INST ceph-release
+#$INST ceph-release
 
 
 #Check if this is needed with new vm templates
-rpm -i ${SHC4HPCBASE/packages/el/7/packages-microsoft-prod.rpm
+rpm -i ${SHC4HPCBASE}/packages/el/7/packages-microsoft-prod.rpm
 $INST blobfuse fuse
 sudo mkdir /azure
+
 fi
 
-$INST openmpi openmpi-devel
+#removed due to mellanox installs
+rpm -qa | grep MLNX
+#$INST openmpi openmpi-devel
+exit 0

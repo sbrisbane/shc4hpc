@@ -1,9 +1,4 @@
-SLURMDIR=/home/software/slurm/latest 
-PATH=$SLURMDIR/bin:$SLURMDIR/sbin:$PATH
-LD_LIBRARY_PATH=$SLURMDIR/lib:$LD_LIBRARY_PATH
-SLURMCONFIGDIR=/home/software/slurm/configs/etc
-SLURMD_OPTIONS="/home/software/slurm/configs/etc/slurm.conf"
-SLURMCTLD_OPTIONS="-f /home/software/slurm/configs/etc/slurm.conf"
-SLURM_CONF=/home/software/slurm/configs/etc/slurm.conf
+#you can run it from a file like this
+#SLURMD_OPTIONS="/etc/slurm/slurm.conf -b"
 
 

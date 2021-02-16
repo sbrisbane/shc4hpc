@@ -68,7 +68,7 @@
       "name": "[concat(parameters('vmname'), 'VMNic')]", 
       "tags": {}, 
       "apiVersion": "2015-06-15", 
-      "location": "westeurope", 
+      "location": "[resourceGroup().location]", 
       "dependsOn": [
         "[concat('Microsoft.Network/networkSecurityGroups/',  parameters('vmname'), 'NSG')]" 
       ], 
@@ -94,7 +94,7 @@
       "name": "[parameters('vmname')]", 
       "tags": {}, 
       "apiVersion": "2017-12-01", 
-      "location": "westeurope", 
+      "location": "[resourceGroup().location]", 
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', parameters('vmname'), 'VMNic')]"
       ], 

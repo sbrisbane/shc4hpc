@@ -10,7 +10,8 @@
         "az_tenant_id": "{{env `AZ_TENANT_ID`}}",
         "az_subscription_id": "{{env `AZ_SUBSCRIPTION_ID`}}",
         "az_image_rg": "{{env `AZ_IMAGE_RG`}}",
-        "az_goldenimage": "{{env `AZ_GOLDENIMAGE`}}"
+        "az_goldenimage": "{{env `AZ_GOLDENIMAGE`}}",
+        "az_region": "{{env `AZ_REGION`}}"
 
     },
 
@@ -27,16 +28,16 @@
     "managed_image_name": "{{user `az_goldenimage`}}",
 
     "os_type": "Linux",
+    "image_sku": "7_8-gen2",
     "image_publisher": "OpenLogic",
     "image_offer": "CentOS-HPC",
-    "image_sku": "7.1",
 
     "azure_tags": {
         "dept": "RCSI",
         "task": "Image deployment"
     },
 
-    "location": "West Europe",
+    "location": "{{user `az_region`}}",
     "vm_size": "Standard_D2s_v3"
   }],
 

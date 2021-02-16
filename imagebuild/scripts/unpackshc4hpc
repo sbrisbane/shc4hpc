@@ -9,7 +9,7 @@ SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
 SYSDIR=$SHC4HPCBASE
 DSTDIR=$TMPDIR/$SYSDIR
 
-mkdir -p $DSTDIR $SYSDIR 
+sudo mkdir -m 755 -p $DSTDIR $SYSDIR 
 
 sudo tar -xzf /tmp/shc4hpcblob.tgz -C $DSTDIR
 

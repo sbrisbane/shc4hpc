@@ -1,0 +1,163 @@
+#!/bin/bash
+#. /usr/lib/securelinx/functions
+DIR=$(dirname $(realpath $0) )
+pwd=$PWD
+cd $DIR
+
+nodename=headnode1
+. environ
+AZOSUSER=username
+function getip()
+{
+    ip -4 addr show scope global dev eth0  | grep "scope global" | awk '{print $2}' | awk -F / '{print $1}' | head -1
+}
+
+
+function az_login
+{
+
+	echo APP_ID is $AZ_APP_ID
+	if [ -z "$AZ_APP_ID" ] || [ -z "$AZ_APP_SECRET" ] || [ -z "$AZ_TENANT_ID" ] || [ -z "$AZ_SUBSCRIPTION_ID" ] ; then
+		  echo "First set AZ_APP_ID, AZ_APP_SECRET, AZ_TENANT_ID and AZ_SUBSCRIPTION_ID in environ or environ.secret file"
+		  exit 1
+	fi
+   # export AZ_APP_ID="5960eff4-3055-485da24e-1f8c9359ede4"
+   # export AZ_APP_SECRET="gquaZxepPjYbJnZm63aAPwOnWo1PRhqeviECh4h8sU="
+   # export AZ_TENANT_ID="c7d87009-ad59-43yb-87a3-c4fa4b980a8e"
+   # export AZ_SUBSCRIPTION_ID="4888d506asa7dbf-4616-b8f3-22c80026fbd2"
+
+}
+
+AZ_REGION=${AZ_REGION:-northeurope}
+echo $AZ_RESOURCE_GROUP
+
+AZ_RESOURCE_GROUP=${AZ_RESOURCE_GROUP:-SHC4HPC-Traditional-HPC}
+echo $AZ_RESOURCE_GROUP
+AZ_GOLDENIMAGE=${AZ_GOLDENIMAGE:-SHC4HPC-SUSECON-OPENSUSE-v1.2}
+
+VPN_SUBNET=none
+OS_SUBNET=none
+AZ_OS_ROUTER=none
+MASTER_IS_VPN_CLIENT=0
+
+NETRG=${AZ_NET_RG:-SHC4HPC-Traditional-HPC}
+IMAGERG=${AZ_IMAGE_RG:-SHC4HPC-Traditional-HPC}
+VNETNAME=${AZ_VNET_NAME:-SHC4HPC-Traditional-vnet}
+SUBNETNAME=${AZ_SUBNET_NAME:-default}
+
+function createuserdata () {
+nodename=$1
+mkdir -p /tmp/slurmlaunch-$USER
+UNIQUENAME="$nodename-$RANDOM"
+export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$UNIQUENAME"
+
+NFSMASTER=headnode1
+export NFSMASTER
+
+#headnode and compute node will use the same template (ie SKU) 
+#unless you change /etc/securelinx.conf in headnode once it is started
+
+TIMEZONE="Europe/Dublin"
+  cat << EOF > "${LAUNCHCONFIG}"
+#cloud-config
+timezone: "$TIMEZONE"
+nfsmaster: "${NFSMASTER}"
+slurmmaster: "headnode1"
+hostname: "headnode1"
+nodename: "headnode1"
+master: yes
+az_os_router: ${AZ_OS_ROUTER}
+az_goldenimage: $AZ_GOLDENIMAGE
+az_resource_group: $AZ_RESOURCE_GROUP
+az_image_rg: $AZ_IMAGE_RG
+az_net_rg: $AZ_NET_RG
+az_vnet_name: $VNETNAME
+az_subnet_name: $SUBNETNAME
+az_subnet: 10.2.0.0/16
+az_app_id: ${AZ_APP_ID} 
+az_app_secret: ${AZ_APP_SECRET}
+az_subscription_id: ${AZ_SUBSCRIPTION_ID}
+az_tenant_id: ${AZ_TENANT_ID}
+az_region: ${AZ_REGION}
+os_subnet: ${OS_SUBNET}
+az_vm_template: ${AZ_VM_TEMPLATE}
+vpn_subnet: ${VPN_SUBNET}
+ldap_join_account: changeme
+ldap_realm: changeme
+master_is_vpn_client: $MASTER_IS_VPN_CLIENT
+cloud: azure
+# Configure where output will go
+output:
+  all: ">> /var/log/cloud-init.log"
+# configure interaction with ssh server
+ssh_svcname: ssh
+ssh_deletekeys: True
+ssh_genkeytypes: ['rsa', 'ecdsa']
+master_is_vpn_client: 0
+# Hostname management
+preserve_hostname: False
+EOF
+
+#fqdn: ${nodename}
+}
+
+
+az_login
+az group create -l $AZ_REGION -n $AZ_RESOURCE_GROUP
+
+
+createuserdata $nodename
+
+cat << EOF >  /tmp/slurm_instance.json
+{
+   "commandToExecute": "/usr/sbin/slurm_instance.sh"
+}
+EOF
+
+TEMPLATEFILE=../../imagebuild/files/shc4hpc/templates/azure/$AZ_VM_TEMPLATE
+echo $VNETNAME
+#FROMCLI=1
+if [ -z $FROMCLI ]; then
+echo createfrom template
+az deployment group create -n "$UNIQUENAME"  --template-file "${TEMPLATEFILE}"  -g ${AZ_RESOURCE_GROUP} --parameters vmname=${nodename} goldenimage=${AZ_GOLDENIMAGE} imageRG=${IMAGERG} netRG=${NETRG} vnetName=${VNETNAME} subnetName=${SUBNETNAME} customData="$(cat ${LAUNCHCONFIG})" sshkey="$(cat $HOME/.ssh/id_rsa.pub)" 
+else
+
+export SUBNETID=$(az network vnet subnet show /
+--resource-group "{AZ_RESOURCE_GROUP}" --name default /
+--vnet-name "{VNETNAME}" --query id -o tsv)
+
+echo "az vm create \
+    --resource-group ${AZ_RESOURCE_GROUP} \
+    --name ${nodename} \
+    --image ${AZ_GOLDENIMAGE} \
+    --admin-username $AZOSUSER \
+    --generate-ssh-keys  \
+    --size Standard_D4s_v3 \
+    --subnet $SUBNET \
+    --public-ip-address headnode-ip \
+    --public-ip-address-allocation static\
+    --custom-data ${LAUNCHCONFIG}"
+az vm create \
+    --resource-group "${AZ_RESOURCE_GROUP}" \
+    --name ${nodename} \
+    --image ${AZ_GOLDENIMAGE} \
+    --admin-username $AZOSUSER \
+    --generate-ssh-keys  \
+    --size Standard_D4s_v3 \
+    --subnet $SUBNET \
+    --public-ip-address headnode-ip \
+    --public-ip-address-allocation static \
+    --custom-data ${LAUNCHCONFIG}
+
+
+az vm extension set --resource-group "${AZ_RESOURCE_GROUP}" \
+   --vm-name ${nodename} --name customScript --publisher Microsoft.Azure.Extensions --settings /tmp/slurm_instance.json
+fi
+az network public-ip show  --resource-group $AZ_RESOURCE_GROUP --name headnode1-ip || az network public-ip create  --resource-group $AZ_RESOURCE_GROUP --name headnode1-ip  --allocation-method static
+sleep 15
+#NIC=$(az vm nic list --vm-name headnode1 --resource-group "${AZ_RESOURCE_GROUP}" --output tsv | awk '{print $1}' )
+az network nic ip-config update   --nic-name headnode1VMNic     --resource-group "$AZ_RESOURCE_GROUP"  --name ipconfigheadnode1 --public-ip-address headnode1-ip
+sleep 15
+PUBIP=$(az network public-ip show --name headnode1-ip -g ${AZ_RESOURCE_GROUP}  -o tsv --query ipAddress)
+echo ssh $AZOSUSER@$PUBIP
+

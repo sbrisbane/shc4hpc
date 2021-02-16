@@ -241,7 +241,6 @@ mkdir -p /home/configs/scripts/tweaks
 echo /bin/cp /home/configs/slurm.conf.template /etc/slurm/slurm.conf >> /home/configs/scripts/tweaks
 
 systemctl enable --now mariadb
-
 cat << EOF > /root/initdb.sql
 CREATE USER slurm@localhost IDENTIFIED BY 'slurm';
 create database slurm_acct_db;
@@ -249,28 +248,40 @@ grant all on slurm_acct_db.* TO 'slurm'@'localhost' identified by 'slurm' with g
 FLUSH PRIVILEGES;
 EOF
 
-#TODO check this works
-chmod 600 /root/initdb.sql
-mysql -p "" < /root/initdb.sql &
-sleep 1
-    ##Setup SLURM Services on SUSE
+cat << EOF > /root/.my.cnf
+[mysql]
+user=root
+password=
 
-        mysql_secure_installation <<EOF
-
-y
-testing
-testing
-y
-y
-y
-y
 EOF
-#also needs
 
+chmod 600 /root/initdb.sql
+chmod 600 /root/.my.cnf
+db_root_password=testing
+
+mysql  < /root/initdb.sql
+
+myql --user=root <<EOF
+UPDATE mysql.user SET Password=PASSWORD('${db_root_password}') WHERE User='root';
+DELETE FROM mysql.user WHERE User='';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
+FLUSH PRIVILEGES;
+EOF 
+
+cat << EOF > /root/.my.cnf
+[mysql]
+user=root
+password=${db_root_password}
+
+EOF
 
 
         mkdir -p /home/software/slurm/configs/etc/
-        /bin/cp -p /etc/slurm/slurmdbd.conf /home/software/slurm/configs/etc/
+        chmod 600 /etc/slurm/slurmdbd.conf
+        #chown slurm: /etc/slurm/slurmdbd.conf
+        #/bin/cp -p /etc/slurm/slurmdbd.conf /home/software/slurm/configs/etc/
     	if [ -f /usr/lib/systemd/system/slurmdbd.service ]; then
 
 	     systemctl daemon-reload
@@ -370,7 +381,7 @@ az_net_rg: $(get_cloudconfig_or_changeme az_net_rg)
 az_vnet_name: $(get_cloudconfig_or_changeme az_vnet_name)
 az_subnet_name: $(get_cloudconfig_or_changeme az_subnet_name)
 az_app_id: $(get_cloudconfig_or_changeme az_app_id)
-az_secret: $(get_cloudconfig_or_changeme az_secret)
+az_app_secret: $(get_cloudconfig_or_changeme az_app_secret)
 az_subscription_id: $(get_cloudconfig_or_changeme az_subscription_id)
 az_tenant_id: $(get_cloudconfig_or_changeme az_tenant_id)
 az_region: $(get_cloudconfig_or_changeme az_region)
@@ -485,6 +496,7 @@ cat /root/.ssh/authorized_keys2 >> /root/.ssh/authorized_keys
 ln /root/.ssh/authorized_keys /root/.ssh/authorized_keys2
 
 else
+/bin/rm -f /etc/slurm/slurmdbd.conf
 #NOT THE MASTER...
 
 #    AZ_SUBNET="10.0.3.0/24"

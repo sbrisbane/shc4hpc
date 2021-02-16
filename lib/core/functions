@@ -22,7 +22,7 @@ function update_hosts()
 }
 function get_config ()
 {
-   SECURELINXFILE=/etc/shc4hpc/shc4hpc.conf
+   SECURELINXFILE=${SHC4HPCBASE}/etc/shc4hpc/shc4hpc.conf
    temp=$(grep ^"$1": "$SECURELINXFILE" | awk '{print $2}' | tail -1)
    temp="${temp%\"}"
    temp="${temp#\"}"
@@ -172,11 +172,11 @@ isAws()
 
 function az_login {
     AZ_APP_ID=$(get_config az_app_id)
-    AZ_SECRET=$(get_secret_config az_secret $AZ_APP_ID)
+    AZ_APP_SECRET=$(get_secret_config az_app_secret $AZ_APP_ID)
     AZ_TENANT_ID=$(get_config az_tenant_id)
     AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
     
-    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_SECRET"
+    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_APP_SECRET"
     az account set --subscription "${AZ_SUBSCRIPTION_ID}"
 }
 

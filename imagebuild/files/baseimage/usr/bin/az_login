@@ -5,11 +5,11 @@ test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
 
 function az_login {
     AZ_APP_ID=$(get_config az_app_id)
-    AZ_SECRET=$(get_secret_config az_secret $AZ_APP_ID)
+    AZ_APP_SECRET=$(get_secret_config az_app_secret $AZ_APP_ID)
     AZ_TENANT_ID=$(get_config az_tenant_id)
     AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
 
-    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_SECRET"
+    az login --service-principal --username "$AZ_APP_ID" --tenant "$AZ_TENANT_ID" --password "$AZ_APP_SECRET"
     az account set --subscription "${AZ_SUBSCRIPTION_ID}"
 }
 

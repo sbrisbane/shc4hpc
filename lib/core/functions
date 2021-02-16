@@ -437,9 +437,9 @@ error()
 
 nodetype()
 {
-   isDell $1 && echo dell && exit 0
-   isAws  $1 && echo aws && exit 0
-   isAzure  && echo azure && exit 0
+   isDell $1 && echo dell && return 0
+   isAws  $1 && echo aws && return 0
+   isAzure $1  && echo azure && return 0
    echo default   
 }
 

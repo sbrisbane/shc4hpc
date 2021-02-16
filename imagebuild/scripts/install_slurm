@@ -67,8 +67,8 @@ sudo chmod 600 /etc/munge/munge.key
 sudo chown munge: /etc/munge/munge.key
 sudo systemctl enable munge 
 
-sudo mkdir -p /var/spool/slurm/
-#sudo chown slurm. /var/spool/slurmctld
+sudo mkdir -p /var/spool/slurm/ /var/log/slurm
+#sudo chown slurm. /var/spool/slurmctld /var/log/slurm
 sudo chmod 755 /var/spool/slurm
 
 #TODO may not be needed?

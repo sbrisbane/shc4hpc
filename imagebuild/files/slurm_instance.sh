@@ -1,6 +1,9 @@
 #!/bin/bash -x
 SLURMMASTER=""
-. /usr/lib/shc4hpc/lib/core/functions
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
 
 #Attemp to Add Name Resolution for Azure Peering # HACK
 #sed -i '/search/ s/$/ trad.shc4hpc cloud.shc4hpc/' /etc/resolv.conf
@@ -292,7 +295,9 @@ EOF
     #make templates for nodes
     mkdir -p /home/configs/scripts
     mkdir -p /var/log/slurm
-    
+    mkdir -p /var/spool/slurm/ctld
+    chown slurm: /var/log/slurm /var/spool/slurm/ctld
+ 
     if [ -f /home/configs/slurm.conf.template ]; then mv /home/configs/slurm.conf.template /home/configs/slurm.conf.template.old; fi 
 
     echo ControlMachine=$SLURMMASTER   | sudo tee -a /home/configs/slurm.conf.template
@@ -357,7 +362,8 @@ EOF
     fi
 
 mkdir -p /etc/shc4hpc
-cat << EOF >> /etc/shc4hpc/shc4hpc.conf
+ln -s $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf /etc/shc4hpc/shc4hpc.conf
+cat << EOF >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf
 os_auth_url: $OS_AUTH_URL 
 os_project_id: $OS_PROJECT_ID
 os_user_domain_name: $OS_USER_DOMAIN_NAME
@@ -391,11 +397,11 @@ ldapjoinaccount: ${LDAPJOINACCOUNT}
 ntpserver: ${NTPSERVER}
 az_vm_template: $(get_cloudconfig_or_changeme az_vm_template)
 EOF
-dump_sl_vars >> /etc/shc4hpc/shc4hpc.conf
+dump_sl_vars >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf
 if [ -n "${NFSMASTER}" ]; then
-      echo  	nfsmaster: ${NFSMASTER} >> /etc/shc4hpc/shc4hpc.conf
+      echo  	nfsmaster: ${NFSMASTER} >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf
 else
-      echo nfsmaster: $(getip) >> /etc/shc4hpc/shc4hpc.conf 
+      echo nfsmaster: $(getip) >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf 
 fi
 ACTASVPN=$(master_is_vpn_client)
 if [ "1" = "$ACTASVPN" ]; then
@@ -459,7 +465,7 @@ fi
     if [ "$notosk" -eq 0 ];then
     #TODO, update this error checking
         if  [ -z $OS_GIM ] || [ -z $OS_USERNAME ] || [ -z "$OS_PASSWORD" ] || [ -z $OS_AUTH_URL ] || [ -z $OS_PROJECT_NAME ]; then
-           echo "You will need to set some variables manuallly in /etc/shc4hpc/shc4hpc.conf"
+           echo "You will need to set some variables manuallly in $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf"
         fi
     fi
     if [ $notazure -eq 1 ]; then

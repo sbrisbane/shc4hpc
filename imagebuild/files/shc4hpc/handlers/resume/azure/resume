@@ -140,7 +140,7 @@ SUBNETNAME=$(get_config az_subnet_name)
 #FROMCLI=1
 if [ -z $FROMCLI ]; then
 
-az group deployment create -n "$UNIQUENAME"  --template-file "${TEMPLATEFILE}"  -g ${AZ_RESOURCE_GROUP} --parameters vmname=${nodename} goldenimage=${AZ_GOLDENIMAGE} imageRG=${IMAGERG} netRG=${NETRG} vnetName=${VNETNAME} subnetName=${SUBNETNAME} customData="$(cat ${LAUNCHCONFIG})" sshkey="$(cat $HOME/.ssh/beeondkey.pub)"
+az deployment group create -n "$UNIQUENAME"  --template-file "${TEMPLATEFILE}"  -g ${AZ_RESOURCE_GROUP} --parameters vmname=${nodename} goldenimage=${AZ_GOLDENIMAGE} imageRG=${IMAGERG} netRG=${NETRG} vnetName=${VNETNAME} subnetName=${SUBNETNAME} customData="$(cat ${LAUNCHCONFIG})" sshkey="$(cat $HOME/.ssh/beeondkey.pub)"
 
 else
 

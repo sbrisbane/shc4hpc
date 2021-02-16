@@ -15,7 +15,7 @@ RECURSECP=rsync -a
 sysconfig: .build/sysconfig
 
 .build/sysconfig/shc4hpc: sysconfig
-	echo SHC4HPCBASE=${SHC4HPCBASE} > $@
+	echo export SHC4HPCBASE=${SHC4HPCBASE} > $@
 
 shc4hpcsysconfig: .build/sysconfig/shc4hpc
 
@@ -42,8 +42,8 @@ environ.secret: examples/drivers/environ.secret
 packer: thirdparty/packer
 
 install: all
-	cp  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
-	mkdir -p ${SHC4HPCBASE}/bin
+	install -m 644  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
+	mkdir -m 755 -p ${SHC4HPCBASE}/bin
 	install -m 0755 thirdparty/packer ${SHC4HPCBASE}/bin/packer 
 	${RECURSECP} imagebuild/ ${SHC4HPCBASE}/imagebuild/ 
 	${RECURSECP} lib/ ${SHC4HPCBASE}/lib/ 

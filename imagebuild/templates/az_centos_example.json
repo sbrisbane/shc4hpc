@@ -4,13 +4,13 @@
         "os_tenant_name": "{{env `OS_PROJECT_NAME`}}",
         "os_domain_name": "{{env `OS_USER_DOMAIN_NAME`}}",
         "os_auth_url": "{{env `OS_AUTH_URL`}}",
-        "os_password": "{{env `OS_PASSWORD`}}"
-        "az_client_id": "{{env `AZ_CLIENT_ID1}}",
+        "os_password": "{{env `OS_PASSWORD`}}",
+        "az_client_id": "{{env `AZ_CLIENT_ID`}}",
         "az_client_secret": "{{env `AZ_CLIENT_SECRET`}}",
         "az_tenant_id": "{{env `AZ_TENANT_ID`}}",
         "az_subscription_id": "{{env `AZ_SUBSCRIPTION_ID`}}",
         "az_image_rg": "{{env `AZ_IMAGE_RG`}}",
-        "az_goldenimage": "{{env `AZ_GOLDEN_IMAGE`}}",
+        "az_goldenimage": "{{env `AZ_GOLDENIMAGE`}}"
 
     },
 
@@ -18,13 +18,13 @@
   "builders": [{
     "type": "azure-arm",
 
-    "client_id": "[variables('az_client_id')]",
-    "client_secret": "[variables('az_client_secret')]",
-    "tenant_id": "[variables('az_tenant_id')]",
-    "subscription_id": "[variables('az_subscription_id')]",
+    "client_id": "{{user `az_client_id`}}",
+    "client_secret": "{{user `az_client_secret`}}",
+    "tenant_id": "{{user `az_tenant_id`}}",
+    "subscription_id": "{{user `az_subscription_id`}}",
 
-    "managed_image_resource_group_name": "[variables('az_image_rg')]",
-    "managed_image_name": "[variables('az_goldenimage')]",
+    "managed_image_resource_group_name": "{{user `az_image_rg`}}",
+    "managed_image_name": "{{user `az_goldenimage`}}",
 
     "os_type": "Linux",
     "image_publisher": "OpenLogic",
@@ -42,7 +42,7 @@
 
     "provisioners": [{
         "type": "file",
-        "source": "files/munge.key",
+        "source": "files/userdefined/secrets/generated/etc/munge.key",
         "destination": "/tmp/munge.key"
     },
     {
@@ -69,14 +69,8 @@
 
     },
     {
-        "type": "file",
-        "source": "files/slurmrpms.tgz",
-        "destination": "/tmp/slurmrpms.tgz"
-
-    },
-    {
         "type": "shell", 
-        "scripts": ["scripts/fixtty", "scripts/unpackbaseimage", "scripts/unpackshc4hpc", "scripts/unpackuserdefined" "scripts/package_manager", "scripts/base_packages", "scripts/ldap_auth", "scripts/install_slurm", "scripts/user_software", "scripts/install_custom_packages", "scripts/azure", "scripts/final" ]
+        "scripts": ["scripts/fixtty", "scripts/unpackbaseimage", "scripts/unpackshc4hpc", "scripts/unpackuserdefined", "scripts/package_manager", "scripts/base_packages", "scripts/ldap_auth", "scripts/install_slurm", "scripts/user_software", "scripts/install_custom_packages", "scripts/azure", "scripts/final" ]
     },
     {
         "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",

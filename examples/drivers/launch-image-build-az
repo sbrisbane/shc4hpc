@@ -16,13 +16,14 @@ test -f $SHC4HPCSYSCONFIG && . $SHC4HPCSYSCONFIG
 
 PACKERIO=$SHC4HPCBASE/bin/packer
 
-cd ../../imagebuild/files/anything
-tar czf ../anythingblob.tgz ./ 
+cd ../../imagebuild/files/baseimage
+tar czf ../baseimageblob.tgz ./ 
 cd ../shc4hpc
-rsync -a $SHC4HPCSYSCONFIG/lib/ lib/
+rsync -a $SHC4HPCBASE/lib/ lib/
 tar czf ../shc4hpcblob.tgz ./ 
 cd ../userdefined
 tar czf ../userdefinedblob.tgz ./
 cd ../..
-${PACKERIO} build templates/az_centos_example.json
+echo $AZ_IMAGE_RG
+${PACKERIO} build templates/az_centos_example2.json
 cd $pwd

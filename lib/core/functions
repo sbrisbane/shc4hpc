@@ -401,6 +401,7 @@ function restart_failed_nodes()
 log ()
 {
    logger -s "$@"
+   echo "$@" >> /tmp/alllogs
 }
 verbose()
 {

@@ -1,5 +1,11 @@
 #FOR DEBUG, examples
-DebugFlags=NodeFeatures,NO_CONF_HASH,Power
+################################################
+##                    DEBUG                     #
+#################################################
+DebugFlags=NO_CONF_HASH,power,NodeFeatures,powersave
+SlurmctldDebug=info
+SlurmdDebug=info
+#
 ClusterName=local
 AuthType=auth/munge
 CryptoType=crypto/munge
@@ -67,9 +73,6 @@ SlurmSchedLogFile=/var/log/slurmshed.log
 #FOR DEBUG
 
 #ResumeTimeout=60
-#SlurmctldDebug=debug4
-#DebugFlags=Power
-#SlurmdDebug=3
 
 #TODO, need to automate additoon of this line and make it for the master
 #NodeName=localhost CPUs=2 State=UNKNOWN

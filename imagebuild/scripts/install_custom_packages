@@ -1,4 +1,10 @@
 #!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
+
 INST='sudo yum -y install'
 #Dont actually need this on node images, but do on headnode
 #speed up deployment of headnode by pre-installing these

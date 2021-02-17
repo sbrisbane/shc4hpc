@@ -1,4 +1,9 @@
 #!/bin/bash
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
 if [[ -x /usr/bin/yum ]]; then
 	INST='sudo yum -y install'
 	LOCALINST='sudo yum -y --nogpgcheck localinstall '
@@ -102,6 +107,11 @@ ConstrainCores=yes
 ConstrainDevices=yes
 ConstrainRAMSpace=no
 EOF
+
+if ! [ -d $SHC4HPCBASE/etc/shc4hpc/ ]; then mkdir -p $SHC4HPCBASE/etc/shc4hpc/; fi
+
+echo "export SLURMBASE=/" | sudo tee -a $SHC4HPCBASE/etc/shc4hpc/environment
+
 echo finished exit code forced zero
 
 #Do this on first run after setting who I am

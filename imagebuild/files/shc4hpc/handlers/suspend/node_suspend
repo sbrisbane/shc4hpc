@@ -11,8 +11,8 @@ test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
 [ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
 
 
-for node in $(/apps/system/slurm/latest/bin/scontrol show hostnames "$1" ) ; do 
-   info suspend node $1
-   $SHC4HPCBASE/handlers/suspend/node_suspend_helper $1&
+for node in $( $SLURMBASE/bin/scontrol show hostnames "$1" ) ; do 
+   info suspend node $node
+   $SHC4HPCBASE/handlers/suspend/node_suspend_helper $node
 done
 exit 0

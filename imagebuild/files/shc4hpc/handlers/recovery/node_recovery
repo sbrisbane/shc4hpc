@@ -14,7 +14,7 @@ log handling failure for nodes $1
 
 for node in $( $SLURMBASE/bin/scontrol show hostnames "$1" )
 do
-  $SHC4HPCBASE/handlers/recovery/node_recovery_helper $node&
+  $SHC4HPCBASE/handlers/recovery/node_recovery_helper $node
   log fail $node 
 done
 

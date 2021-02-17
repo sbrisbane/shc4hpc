@@ -18,8 +18,8 @@ nodetype=$(nodetype $node)
 #Works reliably with SLURM v20 - all other mechanisms removed.  Slurm v20 and this mechanism is now a relaible approach
 #Drop support for all previous versions
     [ -f $SHC4HPCBASE/handlers/recovery/$nodetype/pre ] && $SHC4HPCBASE/handlers/recovery/$nodetype/pre $node
-    verbose scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
-    scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
+    verbose $SLURMBASE/bin/scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
+    $SLURMBASE/bin/scontrol update nodename="$n" reason="$reason" state=POWER_DOWN  
     if [ $? -ne 0 ]; then
        warning scontrol update nodename="$n" reason="$reason" state=POWER_DOWN failed, you may need to manually recover $node
     fi

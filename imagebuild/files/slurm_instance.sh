@@ -567,7 +567,7 @@ else
 
     # Bare metal nodes use external and fixed IP
     if ! imMetal $NODENAME ; then
-       scontrol update NodeName=$NODENAME NodeAddr=$IP
+       $SLURMBASE/bin/scontrol update NodeName=$NODENAME NodeAddr=$IP
     fi
     res=$(( $res + $? ))
     sudo systemctl enable  slurmd

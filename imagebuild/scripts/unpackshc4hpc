@@ -5,6 +5,10 @@ sudo tar -tzf /tmp/shc4hpcblob.tgz
 
 TMPDIR=/tmp/unpack
 SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+
 
 SYSDIR=$SHC4HPCBASE
 DSTDIR=$TMPDIR/$SYSDIR

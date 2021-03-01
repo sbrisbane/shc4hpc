@@ -36,7 +36,6 @@ JobCompType=jobcomp/filetxt
 JobAcctGatherFrequency=30
 JobAcctGatherType=jobacct_gather/linux
 AccountingStorageType=accounting_storage/slurmdbd
-AccountingStorageHost=headnode1
 AccountingStoragePort=6819
 #AccountingStorageLoc=/var/log/slurm/accounting
 AccountingStorageTRES=Mem,Node,CPU,Billing
@@ -64,7 +63,6 @@ SuspendTimeout=1200
 #SuspendTimeout=30
 
 TreeWidth=128
-#SuspendExcNodes=headnode,metal1,trad1,trad2
 
 SlurmctldLogFile=/var/log/slurmctld.log
 SlurmdLogFile=/var/log/slurm.log
@@ -74,8 +72,6 @@ SlurmSchedLogFile=/var/log/slurmshed.log
 
 #ResumeTimeout=60
 
-#TODO, need to automate additoon of this line and make it for the master
-#NodeName=localhost CPUs=2 State=UNKNOWN
 #THINGS TO BE AWARE OF
 #Quota set to 10 instances in openstack, be dsure that this matches
 #Image size set to m1.small, be sure CPUS match here

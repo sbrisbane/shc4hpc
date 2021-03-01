@@ -1,0 +1,15 @@
+#!/bin/bash
+
+usage()
+{
+  echo $0 path/to/slurm.conf
+
+}
+if [ -z "$1" ]; then
+
+usage exit 1
+
+fi
+SLURMCONF=$1 
+
+grep -v \# ${SLURMCONF} | grep -v ^$| awk -F = '{print "\""$1"\": \""$2"\","}'

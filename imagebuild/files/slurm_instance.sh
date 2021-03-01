@@ -241,7 +241,6 @@ ACTASVPN=$(master_is_vpn_client)
 if AmMaster; then
 
 mkdir -p /home/configs/scripts/tweaks
-echo /bin/cp /home/configs/slurm.conf.template /etc/slurm/slurm.conf >> /home/configs/scripts/tweaks
 
 systemctl enable --now mariadb
 cat << EOF > /root/initdb.sql
@@ -298,10 +297,12 @@ EOF
     mkdir -p /var/spool/slurm/ctld
     chown slurm: /var/log/slurm /var/spool/slurm/ctld
  
-    if [ -f /home/configs/slurm.conf.template ]; then mv /home/configs/slurm.conf.template /home/configs/slurm.conf.template.old; fi 
-
     echo ControlMachine=$SLURMMASTER   | sudo tee -a /home/configs/slurm.conf.template
     echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
+    echo AccountingStorageHost=$SLURMMASTER | sudo tee -a /home/configs/slurm.conf.template
+    echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
+   
+ 
     if [ -f /etc/slurm/slurm.conf.template ] ; then cat  /etc/slurm/slurm.conf.template | sudo tee -a /home/configs/slurm.conf.template; fi
     #generate my nodes
 

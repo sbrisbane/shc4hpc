@@ -34,6 +34,11 @@ imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm:
 
 imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm.pub: imagebuild/files/userdefined/secrets/generated/usr/lib/slurm/id_slurm
 
+thirdparty/slurm/ansible-slurm:
+	echo Reqired thirdparty/slurm/ansible-slurm not found
+	echo Check manual steps in "manual" directory
+	exit 1
+
 thirdparty/packer:
 	echo Reqired thirdparty/packer not found
 	echo Check manual steps in "manual" directory

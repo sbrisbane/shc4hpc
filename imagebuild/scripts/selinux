@@ -1,0 +1,10 @@
+#!/bin/bash
+echo STARTING SCRIPT SELINUX
+setenforce 0
+if [ -f /etc/sysconfig/selinux ] ; then
+        sudo sed 's/SELINUX=.*/SELINUX=disabled/'  /etc/sysconfig/selinux | sudo tee  /etc/sysconfig/selinux.tmp
+        sudo chmod 644 /etc/sysconfig/selinux.tmp
+        sudo mv /etc/sysconfig/selinux.tmp /etc/sysconfig/selinux
+fi
+echo FINISHED SCRIPT SELINUX
+

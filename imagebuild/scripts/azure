@@ -2,7 +2,11 @@
 
 #sudo yum -y  install WALinuxAgent-2.2.18-1.el7
 #
-sudo yum -y install WALinuxAgent
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
+
+
+sudo yum -y install WALinuxAgent azure-cli
 
 #sudo yum -y localinstall /usr/lib/shc4hpc/packages/el/7/msft-rdma-drivers-4.2.4.1-20180512.x86_64.rpm	
 #this is openlogic waagent, which crashes by default if no rdma found.  **FOR POC** we want to run on cheap Azure instances, but use the openlogic VM as this is best for HPC in real life

@@ -9,9 +9,6 @@ INST='sudo yum -y install'
 #Dont actually need this on node images, but do on headnode
 #speed up deployment of headnode by pre-installing these
 $INST python-openstackclient nc openvpn easyrsa screen telnet
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
-$INST azure-cli
 #firewall-cmd  --add-service nfs --permanent
 #firewall-cmd  --add-service nfs 
 #firewall-cmd  --add-service rpc-bind --permanent

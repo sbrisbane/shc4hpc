@@ -22,7 +22,10 @@ function update_hosts()
 }
 function get_config ()
 {
-   SECURELINXFILE=${SHC4HPCBASE}/etc/shc4hpc/shc4hpc.conf
+   SECURELINXFILE=$2
+   if [ -z "$SECURELINXFILE" ]; then
+      SECURELINXFILE=${SHC4HPCBASE}/etc/shc4hpc/shc4hpc.conf
+   fi
    temp=$(grep ^"$1": "$SECURELINXFILE" | awk '{print $2}' | tail -1)
    temp="${temp%\"}"
    temp="${temp#\"}"
@@ -34,7 +37,7 @@ function get_secret_config () {
     #TODO integrate with something
     #Funtions being updated with $2 as some key value, not currently used
     key=$2
-    get_config $1
+    get_config $1 ${SHC4HPCBASE}/etc/shc4hpc/shc4hpc_secret.conf
 }
 function get_cloudconfig_string ()
 {
@@ -170,6 +173,12 @@ isAws()
 }
 
 
+function aws_login {
+   export AWS_ACCESS_KEY_ID=$(get_config  aws_access_key_id)
+   export AWS_SECRET_ACCESS_KEY=$(get_secret_config aws_secret_access_key $AWS_ACCESS_KEY_ID)
+   RGTMP=$(get_config  aws_default_region)
+   export AWS_DEFAULT_REGION=${RGTMP:-us-east-1}
+}
 function az_login {
     AZ_APP_ID=$(get_config az_app_id)
     AZ_APP_SECRET=$(get_secret_config az_app_secret $AZ_APP_ID)

@@ -1,0 +1,168 @@
+#!/bin/bash
+
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+nodename=$1
+
+AZ_PASSWORD=changeme
+AZ_USER="changme"
+
+export AZ_SUBNET=$(get_config az_subnet)
+export OS_AZ_ROUTER=$( get_config os_az_router )
+
+AZ_REGION=$(get_config az_region)
+
+
+AZ_RESOURCE_GROUP=$(get_config az_resource_group)
+AZ_GOLDENIMAGE=$(get_config az_goldenimage)
+
+LDAP_JOIN_ACCOUNT=$(get_config ldap_join_account)
+LDAP_REALM=$(get_config ldap_realm)
+
+#Included here for convenience, now got seperately by used in az_login function 
+#AZ_APP_ID=$(get_config az_app_id)
+#AZ_APP_SECRET=$(get_config az_app_secret)
+#AZ_TENANT_ID=$(get_config az_tenant_id)
+#AZ_SUBSCRIPTION_ID=$(get_config az_subscription_id)
+
+#AZ_SUBSCRIPTION_ID=4888d506-7dbf-4616-b8f3-22c80026fba2
+#AZ_APP_ID="5960eff4-3055-4851-a24e-1f8c9359ede1"
+#AZ_APP_SECRET="193a6baa-309d-436e-a57e-9b9a9c5c70e1"
+#AZ_TENANT_ID="c7d87009-ad59-430b-87a3-c4fa4b981a8e"
+#AZ_GOLDENIMAGE="/subscriptions/4888d506-7dbf-4116-b8f3-22c80026fbd2/resourceGroups/rgSHC4HPC/providers/Microsoft.Compute/images/shc4hpcimagename"
+#AZ_RESOURCE_GROUP=sbVPNRg
+
+VPN_SUBNET=$(get_config vpn_subnet)
+OS_SUBNET=$(get_config os_subnet)
+AZ_OS_ROUTER=$(get_config az_os_router)
+MASTER_IS_VPN_CLIENT=$(get_config master_is_vpn_client)
+
+echo THIS SCRIPT NOT IMPLEMENTED
+exit 1
+
+function createuserdata () {
+nodename=$1
+mkdir -p /tmp/slurmlaunch-$USER
+UNIQUENAME="$nodename-$RANDOM"
+export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$UNIQUENAME"
+
+  cat << EOF > "${LAUNCHCONFIG}"
+#cloud-config
+timezone: "Europe/Dublin"
+runcmd:
+ - [ "/usr/sbin/slurm_instance.sh" ]
+nfsmaster: "${NFSMASTER}"
+slurmmaster: "$(hostname -s)"
+hostname: "${nodename}"
+nodename: "${nodename}"
+master: no
+az_os_router: ${AZ_OS_ROUTER}
+os_subnet: ${OS_SUBNET}
+vpn_subnet: ${VPN_SUBNET}
+ldap_join_account: ${LDAP_JOIN_ACCOUNT}
+ldap_realm: ${LDAP_REALM}
+master_is_vpn_client: $MASTER_IS_VPN_CLIENT
+network:
+  version: 2
+  routes:
+   - to: ${VPN_SUBNET}
+     via: ${AZ_OS_ROUTER}
+     metric: 3
+   - to: ${OS_SUBNET}
+     via: ${AZ_OS_ROUTER}
+     metric: 3
+cloud: azure
+EOF
+
+#fqdn: ${nodename}
+}
+
+
+
+
+#Initial setup
+#One manual run
+#firstEverRun=1
+echo running $0
+if [[ $firstEverRun ]]; then
+
+  az login --user "${AZ_USER}" --password $AZ_PASSWORD
+  az account set --subscription "${AZ_SUBSCRIPTION_ID}"
+  az group create -n "${AZ_RESOURCE_GROUP}" -l "${AZ_REGION}"
+
+  #not working - just set this up manually
+  #az group deployment validate --template-uri https://raw.githubusercontent.com/brisbane/azure-hpc/master/Compute-Grid-Infra/deploy-master.json -g "${AZ_RESOURCE_GROUP}" --mode Incremental --parameters /etc/securelinx_az_param.json
+  #az group deployment create --template-uri https://raw.githubusercontent.com/brisbane/azure-hpc/master/Compute-Grid-Infra/deploy-master.json -g "${AZ_RESOURCE_GROUP}" --mode Incremental --parameters /etc/securelinx_az_param.json
+  #sshKeyData="ssh-rsa AAB3NzaC1yc2EAAAADAQABAAABAQDBULlawRYy/nG1+D0CwOSTetHTdL6Uj0UkzaWR56C48djdi+5BOFXKcZB/9sKQg8ofFppIfkGsrc5F/VSWtv9lDgeBIm9pyhA6ke1lkLs/exeXw9IMbFMki/vJTXXxOYJTRuZZ3k2VpLGnjOdKNN0GkUwCOIWB1ucklhoSREmVo6oXixNHJxtBC8LDaUUfjoQ30N6QOmAhz09shWP691mR5gPr4AEZUmDe6Oyp57wTVdkY6g7+kn04ZRiqriC8NQwaxg8N+iLpdwSl1kw+O1Xwtz7g7hGguw3IUFyPQ2c3stgV572O4RMJAPiHsDwJ0BgfGSeAn0UphWMsMOD7VkI5" 
+  
+  #needs an admin role in the above AZ_USER, to do this line.  Everything else can be done as contributor
+  az ad sp create-for-rbac --query "{ client_id: appId, client_secret: password, tenant_id: tenant }"
+  #copy the 
+  #"client_id": "5b1d2752-2b32-4193-948b-eb0bf2e8e961",
+  #"client_secret": "b8283c8e-e2af-4fe7-9e01-a54fqd852a04",
+  #"tenant_id": "c7d87009-ad59-430b-87a3-c4fa4b980a83"
+  #Use that as az credentials for the group from now on
+#Your sp needs to be a contributor, and it is by default  You can lock this down to quotas etc if you like.
+#az role assignment create --assignee APP_ID --role Reader
+#az role assignment delete --assignee APP_ID --role Contributor
+
+echo set up your packer build template with the above
+exit
+
+fi
+if ! [[ $1 ]];then
+   echo need a name for the VM
+   exit 1
+fi
+
+NFSMASTER=$(get_nfsmaster $nodename)
+export NFSMASTER
+
+createuserdata $nodename
+
+az_login
+
+cat << EOF >  /tmp/slurm_instance.json
+{
+   "commandToExecute": "/usr/sbin/slurm_instance.sh"
+}
+EOF
+
+TEMPLATEFILE=/usr/lib/shc4hpc/templates/azvmtemplate.json
+AZ_VM_TEMPLATE=$(get_config az_vm_template)
+if [ changeme  != $AZ_VM_TEMPLATE ]; then
+    TEMPLATEFILE=/usr/lib/shc4hpc/templates/azure/$AZ_VM_TEMPLATE
+fi
+
+#TODO make this a viariable in /etc/securelinx.conf
+NETRG=$(get_config az_net_rg)
+IMAGERG=$(get_config az_image_rg)
+VNETNAME=$(get_config az_vnet_name)
+SUBNETNAME=$(get_config az_subnet_name)
+FROMCLI=1
+#TODO work out image-id from golden image name
+#Todo work out how to habdle custom key pairs
+#TODO get subnet ID from VPC?
+#Secureity group from VPC?
+
+if [ -z $FROMCLI ]; then
+
+ aws ec2 run-instances --image-id ami-xxxxxxxx --count 1 --instance-type t2.micro --key-name MyKeyPair --security-group-ids sg-903004f8 --subnet-id subnet-6e7f8
+
+else
+
+
+
+
+fi
+az vm extension set --resource-group "${AZ_RESOURCE_GROUP}" \
+   --vm-name ${nodename} --name customScript --publisher Microsoft.Azure.Extensions --settings /tmp/slurm_instance.json
+
+#{
+#  "client_id": "5960eff4-3055-4851-a24e-1f8c9359e4e4",
+#  "client_secret": "193a6baa-309d-436e-a57e-9b9a945c70e0",
+#  "tenant_id": "c7d87009-ad59-430b-87a3-c4fa4b98048e"
+#}
+

@@ -1,4 +1,5 @@
 #!/bin/bash
+echo STARTING SCRIPT UNPACKBASEIMAGE
 cd /
 #force ownership to root though
 sudo tar -tzf /tmp/baseimageblob.tgz
@@ -8,3 +9,4 @@ sudo chown root:root /tmp/unpack -R
 sudo chmod g-w /tmp/unpack -R
 cd /tmp/unpack
 sudo rsync -a ./ /
+echo FINISH SCRIPT UNPACKBASEIMAGE

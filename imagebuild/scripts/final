@@ -9,4 +9,5 @@ EOF
 if [[ -x /usr/bin/yum ]]; then
 	sudo yum-config-manager --disable epel > /dev/null
 	sudo yum-config-manager --disable centos-openstack-* > /dev/null
+        sudo yum clean all
 fi

@@ -5,8 +5,8 @@ pwd=$PWD
 cd $DIR
 
 . environ
-#export PACKER_LOG=1
-#DEBUG="-debug -on-error=ask"
+export PACKER_LOG=1
+DEBUG="-debug -on-error=ask"
 DEBUG="-on-error=ask"
 SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
 SHC4HPCSYSCONFIG="${SHC4HPCSYSCONFIG:-/etc/sysconfig/shc4hpc}"
@@ -26,6 +26,5 @@ cd ../userdefined
 tar czf ../userdefinedblob.tgz ./
 cd ../..
 echo $AZ_IMAGE_RG
-
-${PACKERIO} build $DEBUG "templates/az_centos_example.json"
+${PACKERIO} build $DEBUG "templates/aws_centos_example.json"
 cd $pwd

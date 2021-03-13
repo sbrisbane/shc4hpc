@@ -78,9 +78,11 @@ SlurmSchedLogFile=/var/log/slurmshed.log
 #NodeName=kvm[1-2] CPUs=1 State=CLOUD Feature=CLOUD
 #NodeName=osk[1-3] CPUs=1 State=CLOUD Feature=CLOUD
 NodeName=azure[1-10] CPUs=1 State=CLOUD Feature=CLOUD
+NodeName=aws[1-10] CPUs=1 State=CLOUD Feature=CLOUD
 #NodeName=metal1 Sockets=2 CoresPerSocket=14 ThreadsPerCore=2 State=CLOUD Feature=CLOUD
 #PartitionName=openstack Nodes=osk[1-3] Default=YES MaxTime=INFINITE State=UP
 PartitionName=azure Nodes=azure[1-4] Default=NO MaxTime=INFINITE State=UP
+PartitionName=aws Nodes=aws[1-4] Default=NO MaxTime=INFINITE State=UP
 #PartitionName=azures Nodes=azure[5-7] Default=NO MaxTime=INFINITE State=UP
 #PartitionName=metal Nodes=metal1 Default=NO MaxTime=INFINITE State=UP
 #PartitionName=kvm   Nodes=kvm[1-2]  Default=NO MaxTime=INFINITE State=UP

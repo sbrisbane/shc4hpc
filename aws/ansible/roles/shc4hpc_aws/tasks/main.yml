@@ -1,0 +1,9 @@
+---
+# tasks file for shc4hpc_aws
+ - set_fact:
+       shc4hpcbase: "{{ lookup('env','SHC4HPCBASE') }}"
+       cacheable: True
+ - include_vars: "{{ shc4hpcbase }}/etc/shc4hpc/shc4hpc.conf"
+ - include_vars: "{{ shc4hpcbase }}/etc/shc4hpc/shc4hpc_secret.conf"
+ - include_vars: "{{ shc4hpcbase }}/etc/shc4hpc/aws.yml"
+

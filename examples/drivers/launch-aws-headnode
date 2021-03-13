@@ -1,0 +1,34 @@
+#!/bin/bash
+DIR=$(dirname $(realpath $0) )
+pwd=$PWD
+cd $DIR
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
+SHC4HPCSYSCONFIG="${SHC4HPCSYSCONFIG:-/etc/sysconfig/shc4hpc}"
+test -f $SHC4HPCSYSCONFIG && . $SHC4HPCSYSCONFIG
+[ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
+[ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/aws/functions
+
+! [ -f $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf ] && echo you need to install this and create configs first && exit 1 
+#. environ probably dont need as we have configs now
+#. environ.secret # - in case config is hidden
+
+
+nodename=headnode1
+
+#ami specific in aws, can't configure this?
+AWSOSUSER=centos
+
+
+mkdir -p /tmp/slurmlaunch-$USER
+
+UNIQUENAME="$nodename-$RANDOM"
+export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$UNIQUENAME"
+#headnode and compute node will use the same template (ie SKU) 
+#unless you change /etc/securelinx.conf in headnode once it is started
+
+
+
+aws_login
+aws_ansible-playbook /home/putney/sean.brisbane/shc4hpc/aws/ansible/resume_node.yml -e "user_data_file=$LAUNCHCONFIG" -e "nodename=$nodename" -e "is_master=True" -e "active_queues=aws"
+

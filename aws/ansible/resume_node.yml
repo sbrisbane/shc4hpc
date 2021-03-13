@@ -1,0 +1,46 @@
+---
+ - name: Start up a compute node
+   hosts: localhost
+   vars:
+      aws_region: "{{ aws_default_region }}"
+      
+   roles:
+     - shc4hpc_aws
+
+   tasks: 
+        - name: "check parameters"
+          fail:
+                msg: "nodename  is undefined or user_data_file is undefined"
+          when: nodename  is undefined or user_data_file is undefined
+        
+        - name: generate_user_data
+          template: 
+             src: shc4hpc_launchconfig.j2
+             dest: "{{ user_data_file }}"
+        - name: get user_data
+          set_fact:
+                user_data: "{{lookup('file', user_data_file) }}"
+        - debug:
+           msg: "{{ user_data }}"
+        - fail:
+             msg: "aws_ssh_key_name or aws_image_id or aws_compute_group or aws_subnet_id  is not defined"
+          when: aws_ssh_key_name is not defined or aws_image_id is not defined or aws_compute_group is not defined or  aws_subnet_id  is not defined
+        - name: "start {{ nodename }}"
+          amazon.aws.ec2:
+            key_name: "{{ aws_ssh_key_name }}"
+            instance_type: t2.micro
+            image: "{{ aws_image_id }}"
+            wait: yes
+            group: "{{ aws_compute_group }}"
+            count: 1
+            vpc_subnet_id: "{{ aws_subnet_id }}"
+            assign_public_ip: yes
+#            user_data: "{{ user_data | string | b64encode }}"
+            user_data: "{{ user_data }}"
+            instance_tags: 
+                nodename: "{{ nodename }}"
+          register: vmdetails
+        - name: print vm connection details
+          debug:
+                msg: "now ssh to {{ vmdetails.instances[0].dns_name }}"
+

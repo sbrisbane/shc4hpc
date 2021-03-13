@@ -6,7 +6,8 @@ cd $DIR
 
 nodename=headnode1
 . environ
-AZOSUSER=username
+AWOSUSER=centos
+
 function getip()
 {
     ip -4 addr show scope global dev eth0  | grep "scope global" | awk '{print $2}' | awk -F / '{print $1}' | head -1
@@ -119,7 +120,7 @@ echo $VNETNAME
 #FROMCLI=1
 if [ -z $FROMCLI ]; then
 echo createfrom template
-az deployment group create -n "$UNIQUENAME"  --template-file "${TEMPLATEFILE}"  -g ${AZ_RESOURCE_GROUP} --parameters vmname=${nodename} goldenimage=${AZ_GOLDENIMAGE} imageRG=${IMAGERG} netRG=${NETRG} vnetName=${VNETNAME} subnetName=${SUBNETNAME} customData="$(cat ${LAUNCHCONFIG})" sshkey="$(cat $HOME/.ssh/id_rsa.pub)" 
+az deployment group create -n "$UNIQUENAME"  --template-file "${TEMPLATEFILE}"  -g ${AZ_RESOURCE_GROUP} --parameters vmname=${nodename} goldenimage=${AZ_GOLDENIMAGE} imageRG=${IMAGERG} netRG=${NETRG} vnetName=${VNETNAME} subnetName=${SUBNETNAME} customData="$(cat ${LAUNCHCONFIG})" sshkey="$SSH_KEY" 
 else
 
 export SUBNETID=$(az network vnet subnet show /

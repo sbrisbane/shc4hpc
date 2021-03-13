@@ -74,7 +74,7 @@
     {
         "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
         "inline": [
-          "/usr/local/sbin/ami_cleanup.sh ; /bin/rm  /root/.ssh/authorized_keys && export HISTSIZE=0 && /usr/bin/systemctl stop cloud-init ; /bin/rm -rf /var/lib/cloud  ; sync"
+          "/usr/local/sbin/ami_cleanup.sh ; /bin/rm  /root/.ssh/authorized_keys && export HISTSIZE=0 && /usr/bin/systemctl stop cloud-init ; /bin/rm -rf /var/lib/cloud  /var/log/cloud-init.log ; sync"
         ],
         "inline_shebang": "/bin/sh -x",
         "type": "shell"

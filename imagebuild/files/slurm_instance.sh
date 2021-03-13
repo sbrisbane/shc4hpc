@@ -1,5 +1,6 @@
 #!/bin/bash -x
 SLURMMASTER=""
+SHC4HPCBASE=${SHC4HPCBASE:-/usr/lib/shc4hpc}
 test -f /etc/sysconfig/shc4hpc && . /etc/sysconfig/shc4hpc
 [ -n $SHC4HPCBASE ] && [ -f  $SHC4HPCBASE/etc/shc4hpc/environment ] && . $SHC4HPCBASE/etc/shc4hpc/environment
 [ -n $SHC4HPCBASE ] &&  [ -f  $SHC4HPCBASE/lib/core/functions ] && . $SHC4HPCBASE/lib/core/functions
@@ -167,6 +168,8 @@ cat /tmp/usr_data.txt
 #TODO get slurmmaster from user data
 SLURMMASTER=$(getmaster)
 NODENAME=$(getnodename)
+# I think this needs to be done?
+hostnamectl set-hostname $NODENAME
 #TODO remove this hack + test
 setenforce 0
 /bin/sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
@@ -242,6 +245,10 @@ if AmMaster; then
 
 mkdir -p /home/configs/scripts/tweaks
 
+#TODO allow different names
+MYCLUSTER=mycluster
+
+
 systemctl enable --now mariadb
 cat << EOF > /root/initdb.sql
 CREATE USER slurm@localhost IDENTIFIED BY 'slurm';
@@ -263,7 +270,7 @@ db_root_password=testing
 
 mysql  < /root/initdb.sql
 
-myql --user=root <<EOF
+mysql --user=root <<EOF
 UPDATE mysql.user SET Password=PASSWORD('${db_root_password}') WHERE User='root';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
@@ -281,6 +288,11 @@ EOF
 
 
         mkdir -p /home/software/slurm/configs/etc/
+        SLURMDBDTEMPLATE=/etc/slurm/slurmdbd.conf
+        if [ -f $SHC4HPCBASE/$SLURMDBDTEMPLATE ]; then
+		SLURMDBDTEMPLATE="$SHC4HPCBASE/$SLURMDBDTEMPLATE"
+        fi
+        if ! [ -f /etc/slurm/slurmdbd.conf ]; then cp $SLURMDBDTEMPLATE /etc/slurm/slurmdbd.conf ; fi 
         chmod 600 /etc/slurm/slurmdbd.conf
         #chown slurm: /etc/slurm/slurmdbd.conf
         #/bin/cp -p /etc/slurm/slurmdbd.conf /home/software/slurm/configs/etc/
@@ -289,6 +301,8 @@ EOF
 	     systemctl daemon-reload
 	     systemctl enable --now slurmdbd
              sleep 2
+             sacctmgr -i add cluster "$MYCLUSTER"
+
         fi
 
     #make templates for nodes
@@ -297,13 +311,17 @@ EOF
     mkdir -p /var/spool/slurm/ctld
     chown slurm: /var/log/slurm /var/spool/slurm/ctld
  
+    echo "ClusterName=$MYCLUSTER"      | sudo tee -a /home/configs/slurm.conf.template
     echo ControlMachine=$SLURMMASTER   | sudo tee -a /home/configs/slurm.conf.template
     echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
     echo AccountingStorageHost=$SLURMMASTER | sudo tee -a /home/configs/slurm.conf.template
     echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
    
- 
-    if [ -f /etc/slurm/slurm.conf.template ] ; then cat  /etc/slurm/slurm.conf.template | sudo tee -a /home/configs/slurm.conf.template; fi
+    SLURMTEMPLATE=/etc/slurm/slurm.conf.template
+    if [ -f $SHC4HPCBASE/$SLURMTEMPLATE ]; then 
+	SLURMTEMPLATE="$SHC4HPCBASE/$SLURMTEMPLATE"
+    fi
+    if [ -f "$SLURMTEMPLATE" ] ; then cat  "$SLURMTEMPLATE" | sudo tee -a /home/configs/slurm.conf.template; fi
     #generate my nodes
 
     
@@ -435,6 +453,7 @@ EOF
 fi
     queues=$(getactive_queues)
     notazure=1
+    notaws=1
     notazures=1
     notosk=1
     notbm=1
@@ -456,6 +475,8 @@ fi
 	   notosk=0
        elif [ $i = azures ];then
 	   notazures=0
+       elif [ $i = aws ];then
+	   notaws=0
        elif [ $i = kvm ];then
 	   notkvm=0
 	   #disabled by default
@@ -471,6 +492,9 @@ fi
     fi
     if [ $notazure -eq 1 ]; then
          sed -i  's/PartitionName=azure/#PartitionName=azure/' /home/configs/slurm.conf.template
+    fi
+    if [ $notaws -eq 1 ]; then
+         sed -i  's/PartitionName=azure/#PartitionName=aws/' /home/configs/slurm.conf.template
     fi
     if [ $notbm -eq 1 ]; then
          sed -i  's/PartitionName=metal/#PartitionName=metal/' /home/configs/slurm.conf.template
@@ -495,6 +519,8 @@ fi
     rsync -a /etc/slurm/ /home/software/slurm/configs/etc/
     #/sbin/service slurmctld restart
 
+    
+    
 
 #any pre-loaded keys, from the image, stored in authorized_keys2 
 #authorized_keys gets wiped in several places before now.
@@ -563,8 +589,6 @@ else
     fi
 
   
-    
-
 
     # Bare metal nodes use external and fixed IP
     if ! imMetal $NODENAME ; then

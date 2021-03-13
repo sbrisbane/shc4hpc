@@ -4,6 +4,7 @@ SHC4HPCSYSCONFIG ?= /etc/sysconfig/shc4hpc
 SHC4HPCBASE ?= /usr/lib/shc4hpc
 RECURSECP=rsync -a
 
+.PHONY: etc/shc4hpc/shc4hpc_secret.conf etc/shc4hpc/shc4hpc.conf shc4hpc_secret.conf shc4hpc.conf environ.secret environ packer munge.key sysconfig shc4hpcsysconfig
 
 .DEFAULT_GOAL := all
 
@@ -14,7 +15,7 @@ RECURSECP=rsync -a
 
 sysconfig: .build/sysconfig
 
-.build/sysconfig/shc4hpc: sysconfig
+.build/sysconfig/shc4hpc: | sysconfig
 	echo export SHC4HPCBASE=${SHC4HPCBASE} > $@
 
 shc4hpcsysconfig: .build/sysconfig/shc4hpc
@@ -39,16 +40,35 @@ thirdparty/slurm/ansible-slurm:
 	echo Check manual steps in "manual" directory
 	exit 1
 
+/home/putney/sean.brisbane/shc4hpc/.build/aws:
+	cd aws &&	bash aws-module-installer.sh
+	
+	
+
 thirdparty/packer:
 	echo Reqired thirdparty/packer not found
 	echo Check manual steps in "manual" directory
 	exit 1
-packer:	thirdparty/packer
 
 environ.secret: examples/drivers/environ.secret
+environ: examples/drivers/environ.secret examples/drivers/environ
 packer: thirdparty/packer
 
 
+.build/etc/shc4hpc:
+	mkdir -m 755 -p $@
+
+.build/etc/shc4hpc/shc4hpc_secret.conf:  examples/drivers/environ.secret etc/shc4hpc/shc4hpc_secret.conf | .build/etc/shc4hpc
+	bash -c '. lib/core/functions && cd examples/drivers && env_file_2_config_file environ.secret  ../../.build/etc/shc4hpc/shc4hpc_secret.conf'
+	bash -c ' test -f etc/shc4hpc/shc4hpc_secret.conf  && cat etc/shc4hpc/shc4hpc_secret.conf >> .build/etc/shc4hpc/shc4hpc_secret.conf || true'
+.build/etc/shc4hpc/shc4hpc.conf: examples/drivers/environ examples/drivers/environ.secret etc/shc4hpc/shc4hpc.conf | .build/etc/shc4hpc 
+	bash -c '. lib/core/functions && cd examples/drivers && env_file_2_config_file environ ../../.build/etc/shc4hpc/shc4hpc.conf '
+	bash -c 'test -f etc/shc4hpc/shc4hpc.conf   && cat etc/shc4hpc/shc4hpc.conf >> .build/etc/shc4hpc/shc4hpc.conf || true'
+
+shc4hpc_secret.conf: .build/etc/shc4hpc/shc4hpc_secret.conf
+shc4hpc.conf: .build/etc/shc4hpc/shc4hpc.conf
+
+#TODO ansible collections path, path to ansible etc isnt going to work with non default ${SHC4HPCBASE}
 install: all
 	install -m 644  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}
 	mkdir -m 755 -p ${SHC4HPCBASE}/bin
@@ -56,11 +76,18 @@ install: all
 	${RECURSECP} imagebuild/ ${SHC4HPCBASE}/imagebuild/ 
 	${RECURSECP} lib/ ${SHC4HPCBASE}/lib/ 
 	${RECURSECP} lib/ ${SHC4HPCBASE}/imagebuild/files/shc4hpc/lib/ 
-	${RECURSECP} etc/ ${SHC4HPCBASE}/etc/ 
+	mkdir -m 755 -p ${SHC4HPCBASE}/imagebuild/files/shc4hpc/aws/
+	${RECURSECP} .build/aws/ ${SHC4HPCBASE}/imagebuild/files/shc4hpc/aws/
+	ln -sf ${SHC4HPCBASE}/imagebuild/files/shc4hpc/aws ${SHC4HPCBASE}/aws
+	${RECURSECP} aws/ansible/ ${SHC4HPCBASE}/aws/ansible/
+	/usr/bin/sed -i "s|${PWD}/.build/aws|$$\{SHC4HPCBASE\}/aws|g" ${SHC4HPCBASE}/aws/python/bin/activate*
+	/usr/bin/sed -i "s|XXXSHC4HPCBASEXXX|/usr/lib/shc4hpc|g" ${SHC4HPCBASE}/aws/ansible/ansible.cfg
+	${RECURSECP} .build/etc/ ${SHC4HPCBASE}/etc/ 
+	chmod 600 ${SHC4HPCBASE}/etc/shc4hpc/shc4hpc_secret.conf
 	${RECURSECP} examples/ ${SHC4HPCBASE}/examples/
 
 	
-all:  sysconfig packer munge.key environ.secret shc4hpcsysconfig
+all:  sysconfig packer munge.key shc4hpc.conf shc4hpc_secret.conf shc4hpcsysconfig 
 
 #retrofitslurmmaster: all
 #	cp  .build/sysconfig/shc4hpc ${SHC4HPCSYSCONFIG}

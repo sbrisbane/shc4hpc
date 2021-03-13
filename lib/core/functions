@@ -505,3 +505,25 @@ function osversion (){
    return 1
 
 }
+
+env_file_2_config()
+{
+    ENVFILE=$1
+    CONFFILE=$2
+    if [ -z "$1" ]; then return 1; fi
+    ( . $ENVFILE 
+    for n in $( sed -n 's/export \([A-Za-z_]*\).*/\1/p' $ENVFILE); 
+    do  
+         ENOW=\$\{$n\}
+         ENVVAR=$(eval echo $ENOW)
+         echo $(echo $n | tr '[:upper:]' '[:lower:]')\: $ENVVAR;
+    done 
+    )
+    return 0
+}
+env_file_2_config_file()
+{
+    if [ -z "$2" ]; then return 1; fi
+    env_file_2_config "${1}" >     "${2}"
+}
+

@@ -1,0 +1,21 @@
+# Gather EC2 metadata facts
+ - name: terminate a node
+   hosts: localhost
+   vars:
+      aws_region: "{{ aws_default_region }}"
+
+   roles:
+     - shc4hpc_aws
+
+   tasks:
+      - community.aws.ec2_instance_info:
+           filters:
+             "tag:nodename": "{{ nodename }}" 
+           region: "{{ aws_region }}"
+        register: instances
+      - amazon.aws.ec2:
+            state: absent
+            region: "{{ aws_region }}"
+            instance_ids:  "{{ item.instance_id }}"
+        loop: "{{ instances.instances  }}"
+#TODO delete EBS also      

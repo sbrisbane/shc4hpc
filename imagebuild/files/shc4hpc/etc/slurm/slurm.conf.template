@@ -6,7 +6,6 @@ DebugFlags=NO_CONF_HASH,power,NodeFeatures,powersave
 SlurmctldDebug=info
 SlurmdDebug=info
 #
-ClusterName=local
 AuthType=auth/munge
 CryptoType=crypto/munge
 MpiDefault=none

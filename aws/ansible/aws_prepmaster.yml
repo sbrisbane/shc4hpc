@@ -9,14 +9,6 @@
 
   tasks:
 
-  - name: gather information about an AMI using ami-id
-    amazon.aws.ec2_ami_info:
-        aws_region: "{{ aws_default_region }}"
-        aws_access_key: "{{ aws_access_key_id }}"
-        aws_secret_key: "{{ aws_secret_access_key }}"
-        filters:
-                name:   "{{ aws_goldenimage }}"
-    register: amis
   - name: create key pair using provided key_material
     amazon.aws.ec2_key:
         name: "{{ aws_ssh_key_name }}"
@@ -87,12 +79,20 @@
         tags:
           Name: "{{ aws_subnet_name }}"
     register: aws_subnet
-  - name: debug ami image
-    debug: 
-        msg: "{{ (amis.images | sort(attribute='creation_date') | last).image_id }}"
   - name: debug subnet image
     debug: 
         msg: "{{ aws_subnet }}"
+  - name: gather information about an AMI using ami-id
+    amazon.aws.ec2_ami_info:
+        aws_region: "{{ aws_default_region }}"
+        aws_access_key: "{{ aws_access_key_id }}"
+        aws_secret_key: "{{ aws_secret_access_key }}"
+        filters:
+                name:   "{{ aws_goldenimage }}"
+    register: amis
+  - name: debug ami image
+    debug: 
+        msg: "{{ (amis.images | sort(attribute='creation_date') | last).image_id }}"
   - set_fact:
        aws_image_id: "{{ (amis.images | sort(attribute='creation_date') | last).image_id }}"
   - name: set derived variables for other ansible playbooks

@@ -10,7 +10,7 @@ aws_ansible_sub ()
      echo ${SHC4HPCBASE}
      test -n "$VIRTUAL_ENV" || activate  ;
      cd  ${SHC4HPCBASE}/aws/ansible;
-     $SUB $@
+     $SUB "$@"
   )
       
      
@@ -19,17 +19,17 @@ aws_ansible_sub ()
 aws_ansible()
 {
    export SUB=ansible
-   aws_ansible_sub $@
+   aws_ansible_sub "$@"
 }
 aws_ansible-galaxy()
 {
    export SUB=ansible-galaxy
-   aws_ansible_sub $@
+   aws_ansible_sub "$@"
 }
 aws_ansible-playbook()
 {
    export SUB=ansible-playbook
-   aws_ansible_sub $@
+   aws_ansible_sub "$@"
 }
 
 

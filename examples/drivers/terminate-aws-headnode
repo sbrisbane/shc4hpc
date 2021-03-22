@@ -16,19 +16,6 @@ test -f $SHC4HPCSYSCONFIG && . $SHC4HPCSYSCONFIG
 
 nodename=headnode1
 
-#ami specific in aws, can't configure this?
-AWSOSUSER=centos
-
-
-mkdir -p /tmp/slurmlaunch-$USER
-
-UNIQUENAME="$nodename-$RANDOM"
-export LAUNCHCONFIG="/tmp/slurmlaunch-$USER/launchconfig-$UNIQUENAME"
-#headnode and compute node will use the same template (ie SKU) 
-#unless you change /etc/securelinx.conf in headnode once it is started
-
-
-
 aws_login
-aws_ansible-playbook resume_node.yml -e "user_data_file=$LAUNCHCONFIG" -e "nodename=$nodename" -e "is_master=True" -e "active_queues=aws"
+aws_ansible-playbook suspend.yml -e "nodename=$nodename" -e "is_master=True"
 

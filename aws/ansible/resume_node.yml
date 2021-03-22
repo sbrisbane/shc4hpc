@@ -7,7 +7,10 @@
    roles:
      - shc4hpc_aws
 
-   tasks: 
+   tasks:
+
+
+ 
         - name: "check parameters"
           fail:
                 msg: "nodename  is undefined or user_data_file is undefined"
@@ -25,6 +28,16 @@
         - fail:
              msg: "aws_ssh_key_name or aws_image_id or aws_compute_group or aws_subnet_id  is not defined"
           when: aws_ssh_key_name is not defined or aws_image_id is not defined or aws_compute_group is not defined or  aws_subnet_id  is not defined
+        - name: gather information about an AMI using ami-id
+          amazon.aws.ec2_ami_info:
+             filters:
+                  name:   "{{ aws_goldenimage }}"
+          register: amis
+        - set_fact:
+              aws_image_id: "{{ (amis.images | sort(attribute='creation_date') | last).image_id }}"
+        - debug:
+               msg: "spinning up {{ nodename }} with {{ aws_image_id }} image id" 
+
         - name: "start {{ nodename }}"
           amazon.aws.ec2:
             key_name: "{{ aws_ssh_key_name }}"

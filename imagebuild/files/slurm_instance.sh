@@ -313,7 +313,6 @@ EOF
  
     echo "ClusterName=$MYCLUSTER"      | sudo tee -a /home/configs/slurm.conf.template
     echo ControlMachine=$SLURMMASTER   | sudo tee -a /home/configs/slurm.conf.template
-    echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
     echo AccountingStorageHost=$SLURMMASTER | sudo tee -a /home/configs/slurm.conf.template
     echo SuspendExcNodes=$SLURMMASTER  | sudo tee -a /home/configs/slurm.conf.template
    
@@ -406,7 +405,6 @@ az_net_rg: $(get_cloudconfig_or_changeme az_net_rg)
 az_vnet_name: $(get_cloudconfig_or_changeme az_vnet_name)
 az_subnet_name: $(get_cloudconfig_or_changeme az_subnet_name)
 az_app_id: $(get_cloudconfig_or_changeme az_app_id)
-az_app_secret: $(get_cloudconfig_or_changeme az_app_secret)
 az_subscription_id: $(get_cloudconfig_or_changeme az_subscription_id)
 az_tenant_id: $(get_cloudconfig_or_changeme az_tenant_id)
 az_region: $(get_cloudconfig_or_changeme az_region)
@@ -416,6 +414,15 @@ ldapjoinaccount: ${LDAPJOINACCOUNT}
 ntpserver: ${NTPSERVER}
 az_vm_template: $(get_cloudconfig_or_changeme az_vm_template)
 EOF
+
+cat << EOF >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc_secret.conf
+az_app_secret: $(get_cloudconfig_or_changeme az_client_secret)
+az_client_secret: $(get_cloudconfig_or_changeme az_client_secret)
+aws_secret_access_key: $(get_cloudconfig_or_changeme aws_secret_access_key)
+EOF
+
+chmod 600 $SHC4HPCBASE/etc/shc4hpc/shc4hpc_secret.conf
+
 dump_sl_vars >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf
 if [ -n "${NFSMASTER}" ]; then
       echo  	nfsmaster: ${NFSMASTER} >> $SHC4HPCBASE/etc/shc4hpc/shc4hpc.conf

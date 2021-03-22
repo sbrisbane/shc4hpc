@@ -36,5 +36,5 @@ export SHC4HPCBASE=/apps/shc4hpc
 ```
 before running make 
 
-Innstalling shc4hpc in a non deffault location on images is not supported
+Images will still use the default location of /usr/lib/shc4hpc. Installing shc4hpc in a non default location on images is not supported
 
